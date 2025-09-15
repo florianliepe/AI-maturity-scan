@@ -1,0 +1,945 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Eraneos AI Readiness & Maturity Scan - Simple Demo</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background-color: #f9fafb;
+            color: #374151;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 24px;
+        }
+
+        .header {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            padding: 24px;
+            margin-bottom: 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .logo-icon {
+            width: 48px;
+            height: 48px;
+            background: #0b6b9a;
+            color: white;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            font-weight: bold;
+        }
+
+        .logo-text h1 {
+            font-size: 32px;
+            font-weight: bold;
+            color: #1f2937;
+        }
+
+        .logo-text p {
+            font-size: 14px;
+            color: #6b7280;
+        }
+
+        .maturity-badge {
+            text-align: right;
+        }
+
+        .maturity-badge .label {
+            font-size: 14px;
+            color: #6b7280;
+            margin-bottom: 4px;
+        }
+
+        .maturity-badge .value {
+            background: #ff7a00;
+            color: white;
+            padding: 8px 16px;
+            border-radius: 8px;
+            font-weight: bold;
+            font-size: 18px;
+        }
+
+        .maturity-badge .subtitle {
+            font-size: 12px;
+            color: #9ca3af;
+            margin-top: 4px;
+        }
+
+        .card {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            padding: 24px;
+            margin-bottom: 24px;
+        }
+
+        .card h2 {
+            font-size: 24px;
+            font-weight: 600;
+            color: #1f2937;
+            margin-bottom: 16px;
+        }
+
+        .card h3 {
+            font-size: 20px;
+            font-weight: 600;
+            color: #1f2937;
+            margin-bottom: 8px;
+        }
+
+        .card p {
+            color: #6b7280;
+            font-size: 14px;
+            margin-bottom: 16px;
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 16px;
+            margin-bottom: 16px;
+        }
+
+        .form-input {
+            padding: 12px;
+            border: 1px solid #d1d5db;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.2s;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+
+        .question-item {
+            border-left: 4px solid #e5e7eb;
+            padding-left: 16px;
+            margin-bottom: 16px;
+        }
+
+        .question-row {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        @media (min-width: 1024px) {
+            .question-row {
+                flex-direction: row;
+                align-items: center;
+            }
+        }
+
+        .question-text {
+            flex: 1;
+            color: #374151;
+        }
+
+        .rating-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .rating-label {
+            font-size: 12px;
+            color: #6b7280;
+        }
+
+        .rating-option {
+            width: 48px;
+            height: 48px;
+            border: 2px solid #d1d5db;
+            border-radius: 8px;
+            background: white;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+
+        .rating-option:hover {
+            background: #f3f4f6;
+        }
+
+        .rating-option.selected {
+            background: #ff7a00;
+            border-color: #ff7a00;
+            color: white;
+        }
+
+        .button-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: none;
+            font-size: 16px;
+        }
+
+        .btn-primary {
+            background: #0b6b9a;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #0a5a85;
+        }
+
+        .btn-secondary {
+            background: white;
+            color: #374151;
+            border: 1px solid #d1d5db;
+        }
+
+        .btn-secondary:hover {
+            background: #f9fafb;
+        }
+
+        .btn-accent {
+            background: #ff7a00;
+            color: white;
+        }
+
+        .btn-accent:hover {
+            background: #e6690a;
+        }
+
+        .dashboard {
+            display: none;
+        }
+
+        .dashboard.active {
+            display: block;
+        }
+
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 24px;
+            margin-bottom: 24px;
+        }
+
+        .chart-container {
+            height: 300px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #f9fafb;
+            border-radius: 8px;
+            color: #6b7280;
+        }
+
+        .summary-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+        }
+
+        .summary-card {
+            background: #f9fafb;
+            padding: 20px;
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        .summary-value {
+            font-size: 32px;
+            font-weight: bold;
+            margin-bottom: 4px;
+        }
+
+        .summary-label {
+            font-size: 14px;
+            color: #6b7280;
+        }
+
+        .results {
+            display: none;
+        }
+
+        .results.active {
+            display: block;
+        }
+
+        .alert {
+            padding: 16px;
+            border-radius: 8px;
+            margin-bottom: 24px;
+        }
+
+        .alert-success {
+            background: #ecfdf5;
+            border: 1px solid #d1fae5;
+            color: #065f46;
+        }
+
+        .alert-info {
+            background: #eff6ff;
+            border: 1px solid #dbeafe;
+            color: #1e40af;
+        }
+
+        .score-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 16px;
+        }
+
+        .score-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px;
+            background: #f9fafb;
+            border-radius: 8px;
+        }
+
+        .score-name {
+            font-weight: 600;
+        }
+
+        .score-value {
+            font-weight: bold;
+            color: #0b6b9a;
+        }
+
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <div class="logo">
+                <div class="logo-icon">E</div>
+                <div class="logo-text">
+                    <h1>eraneos</h1>
+                    <p>AI Readiness & Maturity Scan</p>
+                </div>
+            </div>
+            <div class="maturity-badge">
+                <div class="label">Current Maturity Level</div>
+                <div class="value" id="maturityDisplay">Defined (3.0/5.0)</div>
+                <div class="subtitle">Tailored for HR in Retail</div>
+            </div>
+        </header>
+
+        <!-- Assessment Form -->
+        <div id="assessmentForm">
+            <div class="card">
+                <h2>Organization Information</h2>
+                <div class="form-grid">
+                    <input type="text" class="form-input" id="organization" placeholder="Organization Name">
+                    <input type="text" class="form-input" id="contact" placeholder="Contact Person / Email">
+                    <input type="date" class="form-input" id="date">
+                </div>
+            </div>
+
+            <div class="card">
+                <h3>Strategic Relevance</h3>
+                <p>AI strategy and importance for HR operations in retail (recruitment, workforce planning, performance management).</p>
+                <div class="question-item">
+                    <div class="question-row">
+                        <div class="question-text">Our corporate strategy includes AI as a central component for HR functions (hiring, scheduling, performance)</div>
+                        <div class="rating-group">
+                            <span class="rating-label">Disagree</span>
+                            <div class="rating-option" data-question="s1" data-value="1">1</div>
+                            <div class="rating-option" data-question="s1" data-value="2">2</div>
+                            <div class="rating-option selected" data-question="s1" data-value="3">3</div>
+                            <div class="rating-option" data-question="s1" data-value="4">4</div>
+                            <div class="rating-option" data-question="s1" data-value="5">5</div>
+                            <span class="rating-label">Agree</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="question-item">
+                    <div class="question-row">
+                        <div class="question-text">We regularly collaborate with HR technology vendors on AI topics (ATS providers, workforce management solutions)</div>
+                        <div class="rating-group">
+                            <span class="rating-label">Disagree</span>
+                            <div class="rating-option" data-question="p3" data-value="1">1</div>
+                            <div class="rating-option" data-question="p3" data-value="2">2</div>
+                            <div class="rating-option selected" data-question="p3" data-value="3">3</div>
+                            <div class="rating-option" data-question="p3" data-value="4">4</div>
+                            <div class="rating-option" data-question="p3" data-value="5">5</div>
+                            <span class="rating-label">Agree</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="button-group">
+                    <button class="btn btn-secondary" onclick="exportToExcel()">📊 Export to Excel (Demo)</button>
+                    <button class="btn btn-primary" onclick="showDashboard()">📈 View Dashboard</button>
+                    <button class="btn btn-accent" onclick="showResults()">📋 Submit & Generate Report</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Dashboard -->
+        <div id="dashboard" class="dashboard">
+            <div class="card">
+                <h2>AI Maturity Dashboard</h2>
+                <div class="dashboard-grid">
+                    <div>
+                        <h4 style="text-align: center; margin-bottom: 16px;">Maturity Radar Chart</h4>
+                        <div class="chart-container">
+                            📊 Interactive charts available in full React version
+                        </div>
+                    </div>
+                    <div>
+                        <h4 style="text-align: center; margin-bottom: 16px;">Dimension Scores</h4>
+                        <div class="chart-container">
+                            📈 Bar chart visualization available in full version
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <h3>Maturity Summary</h3>
+                <div class="summary-grid">
+                    <div class="summary-card">
+                        <div class="summary-value" style="color: #0b6b9a;" id="overallScore">3.0</div>
+                        <div class="summary-label">Overall Score</div>
+                    </div>
+                    <div class="summary-card">
+                        <div class="summary-value" style="color: #ff7a00;" id="maturityLevel">Defined</div>
+                        <div class="summary-label">Maturity Level</div>
+                    </div>
+                    <div class="summary-card">
+                        <div class="summary-value" style="color: #10b981;" id="strongAreas">0</div>
+                        <div class="summary-label">Strong Areas</div>
+                    </div>
+                    <div class="summary-card">
+                        <div class="summary-value" style="color: #ef4444;" id="improvementAreas">0</div>
+                        <div class="summary-label">Improvement Areas</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="button-group">
+                    <button class="btn btn-secondary" onclick="showForm()">← Back to Assessment</button>
+                    <button class="btn btn-secondary" onclick="exportToExcel()">📊 Export Results (Demo)</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Results -->
+        <div id="results" class="results">
+            <div class="card">
+                <h2>Assessment Complete</h2>
+                
+                <div class="alert alert-success">
+                    <h3 style="margin-bottom: 8px;">Your AI Maturity Results</h3>
+                    <p>Overall Score: <strong id="resultScore">3.0/5.0</strong> — Maturity Level: <strong id="resultLevel">Defined</strong></p>
+                    <p style="font-size: 14px; margin-top: 8px;">Established AI processes and clear governance</p>
+                </div>
+
+                <div class="alert alert-info">
+                    <h4 style="margin-bottom: 8px;">Shareable Report Link</h4>
+                    <p style="word-break: break-all;">https://eraneos-ai-scan.demo/report/12345-abcde</p>
+                </div>
+
+                <div class="score-grid" id="dimensionScores">
+                    <!-- Scores will be populated by JavaScript -->
+                </div>
+
+                <div class="button-group" style="margin-top: 24px;">
+                    <button class="btn btn-primary" onclick="saveToSharePoint()">💾 Save to SharePoint (Demo)</button>
+                    <button class="btn btn-accent" onclick="sendEmail()">📧 Email to Florian Liepe (Demo)</button>
+                    <button class="btn btn-secondary" onclick="exportToExcel()">📊 Download Excel Backup</button>
+                    <button class="btn btn-secondary" onclick="showDashboard()">📈 View Dashboard</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Initialize date field
+        document.getElementById('date').value = new Date().toISOString().slice(0, 10);
+
+        // Question data and answers
+        const questions = {
+            s1: 3, s2: 3, s3: 3,
+            i1: 3, i2: 3, i3: 3,
+            im1: 3, im2: 3, im3: 3,
+            o1: 3, o2: 3, o3: 3,
+            g1: 3, g2: 3, g3: 3,
+            it1: 3, it2: 3, it3: 3,
+            p1: 3, p2: 3, p3: 3
+        };
+
+        const dimensions = {
+            strategic: ['s1', 's2', 's3'],
+            investment: ['i1', 'i2', 'i3'],
+            implementation: ['im1', 'im2', 'im3'],
+            organizational: ['o1', 'o2', 'o3'],
+            governance: ['g1', 'g2', 'g3'],
+            infrastructure: ['it1', 'it2', 'it3'],
+            partnerships: ['p1', 'p2', 'p3']
+        };
+
+        const dimensionNames = {
+            strategic: 'Strategic Relevance',
+            investment: 'Willingness to Invest',
+            implementation: 'Implementation Effects',
+            organizational: 'Organizational Structure & Employee Capabilities',
+            governance: 'Governance',
+            infrastructure: 'IT-Infrastructure and Data',
+            partnerships: 'Partnerships'
+        };
+
+        const maturityLevels = [
+            { level: 1, name: 'Initial', description: 'Ad-hoc AI activities with limited coordination' },
+            { level: 2, name: 'Developing', description: 'Some AI initiatives with basic structure' },
+            { level: 3, name: 'Defined', description: 'Established AI processes and clear governance' },
+            { level: 4, name: 'Managed', description: 'Systematic AI implementation with measurement' },
+            { level: 5, name: 'Optimized', description: 'Continuous AI optimization and innovation' }
+        ];
+
+        // Handle rating clicks
+        document.addEventListener('click', function(e) {
+            if (e.target.classList.contains('rating-option')) {
+                const question = e.target.dataset.question;
+                const value = parseInt(e.target.dataset.value);
+                
+                // Update answer
+                questions[question] = value;
+                
+                // Update UI
+                const group = e.target.parentElement;
+                group.querySelectorAll('.rating-option').forEach(opt => opt.classList.remove('selected'));
+                e.target.classList.add('selected');
+                
+                // Update maturity display
+                updateMaturityDisplay();
+            }
+        });
+
+        function calculateScores() {
+            const scores = {};
+            let totalScore = 0;
+            
+            for (const [dim, questionIds] of Object.entries(dimensions)) {
+                const dimScore = questionIds.reduce((sum, qId) => sum + questions[qId], 0) / questionIds.length;
+                scores[dim] = Math.round(dimScore * 100) / 100;
+                totalScore += dimScore;
+            }
+            
+            const overall = Math.round((totalScore / Object.keys(dimensions).length) * 100) / 100;
+            const maturityIndex = Math.max(0, Math.min(4, Math.round(overall) - 1));
+            const maturity = maturityLevels[maturityIndex];
+            
+            return { scores, overall, maturity };
+        }
+
+        function updateMaturityDisplay() {
+            const { overall, maturity } = calculateScores();
+            document.getElementById('maturityDisplay').textContent = `${maturity.name} (${overall}/5.0)`;
+        }
+
+        function showForm() {
+            document.getElementById('assessmentForm').style.display = 'block';
+            document.getElementById('dashboard').classList.remove('active');
+            document.getElementById('results').classList.remove('active');
+        }
+
+        function showDashboard() {
+            const { scores, overall, maturity } = calculateScores();
+            
+            document.getElementById('assessmentForm').style.display = 'none';
+            document.getElementById('dashboard').classList.add('active');
+            document.getElementById('results').classList.remove('active');
+            
+            // Update summary
+            document.getElementById('overallScore').textContent = overall;
+            document.getElementById('maturityLevel').textContent = maturity.name;
+            
+            const strongAreas = Object.values(scores).filter(score => score >= 4).length;
+            const improvementAreas = Object.values(scores).filter(score => score < 3).length;
+            
+            document.getElementById('strongAreas').textContent = strongAreas;
+            document.getElementById('improvementAreas').textContent = improvementAreas;
+        }
+
+        function showResults() {
+            const { scores, overall, maturity } = calculateScores();
+            
+            document.getElementById('assessmentForm').style.display = 'none';
+            document.getElementById('dashboard').classList.remove('active');
+            document.getElementById('results').classList.add('active');
+            
+            // Update results
+            document.getElementById('resultScore').textContent = `${overall}/5.0`;
+            document.getElementById('resultLevel').textContent = maturity.name;
+            
+            // Update dimension scores
+            const scoresContainer = document.getElementById('dimensionScores');
+            scoresContainer.innerHTML = '';
+            
+            for (const [dim, score] of Object.entries(scores)) {
+                const scoreItem = document.createElement('div');
+                scoreItem.className = 'score-item';
+                scoreItem.innerHTML = `
+                    <span class="score-name">${dimensionNames[dim]}</span>
+                    <span class="score-value">${score}/5.0</span>
+                `;
+                scoresContainer.appendChild(scoreItem);
+            }
+        }
+
+        function exportToExcel() {
+            alert('Excel export functionality is available in the full React application. This demo shows the interface and functionality.');
+        }
+
+        function saveToSharePoint() {
+            alert('SharePoint integration will save the assessment results to:\n\nAI_readiness_and_maturity_scan folder\n\nThis is a demo - actual integration requires backend setup.');
+        }
+
+        function sendEmail() {
+            alert('Email functionality will automatically send results to:\n\nflorian.liepe@eraneos.com\n\nThis is a demo - actual email requires backend setup.');
+        }
+
+        // Initialize
+        updateMaturityDisplay();
+    </script>
+</body>
+</html>
+                        </div>
+                    </div>
+                </div>
+                <div class="question-item">
+                    <div class="question-row">
+                        <div class="question-text">We have developed a specific AI strategy for HR operations in retail (candidate screening, workforce forecasting)</div>
+                        <div class="rating-group">
+                            <span class="rating-label">Disagree</span>
+                            <div class="rating-option" data-question="s2" data-value="1">1</div>
+                            <div class="rating-option" data-question="s2" data-value="2">2</div>
+                            <div class="rating-option selected" data-question="s2" data-value="3">3</div>
+                            <div class="rating-option" data-question="s2" data-value="4">4</div>
+                            <div class="rating-option" data-question="s2" data-value="5">5</div>
+                            <span class="rating-label">Agree</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="question-item">
+                    <div class="question-row">
+                        <div class="question-text">AI is considered essential for our future HR competitiveness in retail talent management</div>
+                        <div class="rating-group">
+                            <span class="rating-label">Disagree</span>
+                            <div class="rating-option" data-question="s3" data-value="1">1</div>
+                            <div class="rating-option" data-question="s3" data-value="2">2</div>
+                            <div class="rating-option selected" data-question="s3" data-value="3">3</div>
+                            <div class="rating-option" data-question="s3" data-value="4">4</div>
+                            <div class="rating-option" data-question="s3" data-value="5">5</div>
+                            <span class="rating-label">Agree</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <h3>Willingness to Invest</h3>
+                <p>Financial commitment and resource allocation for AI initiatives in HR and retail operations.</p>
+                <div class="question-item">
+                    <div class="question-row">
+                        <div class="question-text">We allocate significant budget for AI investments in HR technology (ATS, HRIS, scheduling tools) in the short term (12 months)</div>
+                        <div class="rating-group">
+                            <span class="rating-label">Disagree</span>
+                            <div class="rating-option" data-question="i1" data-value="1">1</div>
+                            <div class="rating-option" data-question="i1" data-value="2">2</div>
+                            <div class="rating-option selected" data-question="i1" data-value="3">3</div>
+                            <div class="rating-option" data-question="i1" data-value="4">4</div>
+                            <div class="rating-option" data-question="i1" data-value="5">5</div>
+                            <span class="rating-label">Agree</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="question-item">
+                    <div class="question-row">
+                        <div class="question-text">We plan substantial long-term investment (13-36 months) in AI for workforce management and retail operations</div>
+                        <div class="rating-group">
+                            <span class="rating-label">Disagree</span>
+                            <div class="rating-option" data-question="i2" data-value="1">1</div>
+                            <div class="rating-option" data-question="i2" data-value="2">2</div>
+                            <div class="rating-option selected" data-question="i2" data-value="3">3</div>
+                            <div class="rating-option" data-question="i2" data-value="4">4</div>
+                            <div class="rating-option" data-question="i2" data-value="5">5</div>
+                            <span class="rating-label">Agree</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="question-item">
+                    <div class="question-row">
+                        <div class="question-text">AI projects in HR are financed centrally with clear budget allocation and governance</div>
+                        <div class="rating-group">
+                            <span class="rating-label">Disagree</span>
+                            <div class="rating-option" data-question="i3" data-value="1">1</div>
+                            <div class="rating-option" data-question="i3" data-value="2">2</div>
+                            <div class="rating-option selected" data-question="i3" data-value="3">3</div>
+                            <div class="rating-option" data-question="i3" data-value="4">4</div>
+                            <div class="rating-option" data-question="i3" data-value="5">5</div>
+                            <span class="rating-label">Agree</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <h3>Implementation Effects</h3>
+                <p>Practical deployment and measurable outcomes of AI in HR processes and retail workforce management.</p>
+                <div class="question-item">
+                    <div class="question-row">
+                        <div class="question-text">We implement AI use cases centrally across multiple HR areas (recruitment, scheduling, performance management)</div>
+                        <div class="rating-group">
+                            <span class="rating-label">Disagree</span>
+                            <div class="rating-option" data-question="im1" data-value="1">1</div>
+                            <div class="rating-option" data-question="im1" data-value="2">2</div>
+                            <div class="rating-option selected" data-question="im1" data-value="3">3</div>
+                            <div class="rating-option" data-question="im1" data-value="4">4</div>
+                            <div class="rating-option" data-question="im1" data-value="5">5</div>
+                            <span class="rating-label">Agree</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="question-item">
+                    <div class="question-row">
+                        <div class="question-text">We have successfully deployed AI for candidate screening, workforce forecasting, or shift optimization</div>
+                        <div class="rating-group">
+                            <span class="rating-label">Disagree</span>
+                            <div class="rating-option" data-question="im2" data-value="1">1</div>
+                            <div class="rating-option" data-question="im2" data-value="2">2</div>
+                            <div class="rating-option selected" data-question="im2" data-value="3">3</div>
+                            <div class="rating-option" data-question="im2" data-value="4">4</div>
+                            <div class="rating-option" data-question="im2" data-value="5">5</div>
+                            <span class="rating-label">Agree</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="question-item">
+                    <div class="question-row">
+                        <div class="question-text">We systematically measure the effectiveness of AI implementations in HR (time-to-hire, employee satisfaction, cost savings)</div>
+                        <div class="rating-group">
+                            <span class="rating-label">Disagree</span>
+                            <div class="rating-option" data-question="im3" data-value="1">1</div>
+                            <div class="rating-option" data-question="im3" data-value="2">2</div>
+                            <div class="rating-option selected" data-question="im3" data-value="3">3</div>
+                            <div class="rating-option" data-question="im3" data-value="4">4</div>
+                            <div class="rating-option" data-question="im3" data-value="5">5</div>
+                            <span class="rating-label">Agree</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <h3>Organizational Structure & Employee Capabilities</h3>
+                <p>AI competencies, training, and organizational readiness within HR teams and retail operations.</p>
+                <div class="question-item">
+                    <div class="question-row">
+                        <div class="question-text">We identify AI use cases for HR through a formal, centrally coordinated process</div>
+                        <div class="rating-group">
+                            <span class="rating-label">Disagree</span>
+                            <div class="rating-option" data-question="o1" data-value="1">1</div>
+                            <div class="rating-option" data-question="o1" data-value="2">2</div>
+                            <div class="rating-option selected" data-question="o1" data-value="3">3</div>
+                            <div class="rating-option" data-question="o1" data-value="4">4</div>
+                            <div class="rating-option" data-question="o1" data-value="5">5</div>
+                            <span class="rating-label">Agree</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="question-item">
+                    <div class="question-row">
+                        <div class="question-text">AI responsibilities are formally defined and embedded in our HR organizational structure</div>
+                        <div class="rating-group">
+                            <span class="rating-label">Disagree</span>
+                            <div class="rating-option" data-question="o2" data-value="1">1</div>
+                            <div class="rating-option" data-question="o2" data-value="2">2</div>
+                            <div class="rating-option selected" data-question="o2" data-value="3">3</div>
+                            <div class="rating-option" data-question="o2" data-value="4">4</div>
+                            <div class="rating-option" data-question="o2" data-value="5">5</div>
+                            <span class="rating-label">Agree</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="question-item">
+                    <div class="question-row">
+                        <div class="question-text">We have structured formats for sharing AI knowledge and experiences among HR staff and store managers</div>
+                        <div class="rating-group">
+                            <span class="rating-label">Disagree</span>
+                            <div class="rating-option" data-question="o3" data-value="1">1</div>
+                            <div class="rating-option" data-question="o3" data-value="2">2</div>
+                            <div class="rating-option selected" data-question="o3" data-value="3">3</div>
+                            <div class="rating-option" data-question="o3" data-value="4">4</div>
+                            <div class="rating-option" data-question="o3" data-value="5">5</div>
+                            <span class="rating-label">Agree</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <h3>Governance</h3>
+                <p>Compliance, risk management, and regulatory adherence for AI in HR processes (EU AI Act, GDPR, hiring fairness).</p>
+                <div class="question-item">
+                    <div class="question-row">
+                        <div class="question-text">We have fully integrated EU AI Act requirements into our HR AI processes and compliance procedures</div>
+                        <div class="rating-group">
+                            <span class="rating-label">Disagree</span>
+                            <div class="rating-option" data-question="g1" data-value="1">1</div>
+                            <div class="rating-option" data-question="g1" data-value="2">2</div>
+                            <div class="rating-option selected" data-question="g1" data-value="3">3</div>
+                            <div class="rating-option" data-question="g1" data-value="4">4</div>
+                            <div class="rating-option" data-question="g1" data-value="5">5</div>
+                            <span class="rating-label">Agree</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="question-item">
+                    <div class="question-row">
+                        <div class="question-text">Roles and responsibilities for AI compliance, data protection, and information security are established for HR data</div>
+                        <div class="rating-group">
+                            <span class="rating-label">Disagree</span>
+                            <div class="rating-option" data-question="g2" data-value="1">1</div>
+                            <div class="rating-option" data-question="g2" data-value="2">2</div>
+                            <div class="rating-option selected" data-question="g2" data-value="3">3</div>
+                            <div class="rating-option" data-question="g2" data-value="4">4</div>
+                            <div class="rating-option" data-question="g2" data-value="5">5</div>
+                            <span class="rating-label">Agree</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="question-item">
+                    <div class="question-row">
+                        <div class="question-text">We have implemented bias detection and fairness evaluation processes for AI-driven hiring and performance decisions</div>
+                        <div class="rating-group">
+                            <span class="rating-label">Disagree</span>
+                            <div class="rating-option" data-question="g3" data-value="1">1</div>
+                            <div class="rating-option" data-question="g3" data-value="2">2</div>
+                            <div class="rating-option selected" data-question="g3" data-value="3">3</div>
+                            <div class="rating-option" data-question="g3" data-value="4">4</div>
+                            <div class="rating-option" data-question="g3" data-value="5">5</div>
+                            <span class="rating-label">Agree</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <h3>IT-Infrastructure and Data</h3>
+                <p>Technical readiness, data quality, and system integration for AI in HR and retail operations.</p>
+                <div class="question-item">
+                    <div class="question-row">
+                        <div class="question-text">Our IT infrastructure is very well suited for implementing AI solutions in HR (cloud-ready, scalable, secure)</div>
+                        <div class="rating-group">
+                            <span class="rating-label">Disagree</span>
+                            <div class="rating-option" data-question="it1" data-value="1">1</div>
+                            <div class="rating-option" data-question="it1" data-value="2">2</div>
+                            <div class="rating-option selected" data-question="it1" data-value="3">3</div>
+                            <div class="rating-option" data-question="it1" data-value="4">4</div>
+                            <div class="rating-option" data-question="it1" data-value="5">5</div>
+                            <span class="rating-label">Agree</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="question-item">
+                    <div class="question-row">
+                        <div class="question-text">Our HR data situation (HRIS, ATS, performance data, scheduling data) is of very good quality and availability</div>
+                        <div class="rating-group">
+                            <span class="rating-label">Disagree</span>
+                            <div class="rating-option" data-question="it2" data-value="1">1</div>
+                            <div class="rating-option" data-question="it2" data-value="2">2</div>
+                            <div class="rating-option selected" data-question="it2" data-value="3">3</div>
+                            <div class="rating-option" data-question="it2" data-value="4">4</div>
+                            <div class="rating-option" data-question="it2" data-value="5">5</div>
+                            <span class="rating-label">Agree</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="question-item">
+                    <div class="question-row">
+                        <div class="question-text">We have implemented organization-wide data governance strategy with measures to improve data quality</div>
+                        <div class="rating-group">
+                            <span class="rating-label">Disagree</span>
+                            <div class="rating-option" data-question="it3" data-value="1">1</div>
+                            <div class="rating-option" data-question="it3" data-value="2">2</div>
+                            <div class="rating-option selected" data-question="it3" data-value="3">3</div>
+                            <div class="rating-option" data-question="it3" data-value="4">4</div>
+                            <div class="rating-option" data-question="it3" data-value="5">5</div>
+                            <span class="rating-label">Agree</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <h3>Partnerships</h3>
+                <p>External collaborations and vendor relationships for AI implementation in HR and retail technology.</p>
+                <div class="question-item">
+                    <div class="question-row">
+                        <div class="question-text">We are integral part of an AI ecosystem including HR technology providers, consulting firms, and universities</div>
+                        <div class="rating-group">
+                            <span class="rating-label">Disagree</span>
+                            <div class="rating-option" data-question="p1" data-value="1">1</div>
+                            <div class="rating-option" data-question="p1" data-value="2">2</div>
+                            <div class="rating-option selected" data-question="p1" data-value="3">3</div>
+                            <div class="rating-option" data-question="p1" data-value="4">4</div>
+                            <div class="rating-option" data-question="p1" data-value="5">5</div>
+                            <span class="rating-label">Agree</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="question-item">
+                    <div class="question-row">
+                        <div class="question-text">We have established criteria for selecting AI partners specifically for HR and retail workforce solutions</div>
+                        <div class="rating-group">
+                            <span class="rating-label">Disagree</span>
+                            <div class="rating-option" data-question="p2" data-value="1">1</div>
+                            <div class="rating-option" data-question="p2" data-value="2">2</div>
+                            <div class="rating-option selected" data-question="p2" data-value="3">3</div>
+                            <div class="rating-option" data-question="p2" data-value="4">4</div>
+                            <div class="rating-option" data-question="p2" data-value="5">5</div>
+                            <span class="rating-label">Agree</span>
