@@ -1,6 +1,29 @@
 import React, { useState, useMemo } from 'react';
-import { RadarChart, PolarGrid, PolarAngleAxis, Radar, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip } from 'recharts';
+import {
+  Chart as ChartJS,
+  RadialLinearScale,
+  PointElement,
+  LineElement,
+  Filler,
+  Tooltip,
+  Legend,
+  CategoryScale,
+  LinearScale,
+  BarElement,
+} from 'chart.js';
+import { Radar, Bar } from 'react-chartjs-2';
 
+ChartJS.register(
+  RadialLinearScale,
+  PointElement,
+  LineElement,
+  Filler,
+  Tooltip,
+  Legend,
+  CategoryScale,
+  LinearScale,
+  BarElement
+);
 // Eraneos brand colors
 const ERANEOS_COLORS = {
   brand: '#0b6b9a',
@@ -560,3 +583,4 @@ export default function EraneosAIMaturityScan() {
     </div>
   );
 }
+
