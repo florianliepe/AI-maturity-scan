@@ -1,14 +1,13 @@
 {
   "name": "eraneos-ai-maturity-scan",
-  "version": "1.0.0",
-  "description": "Eraneos AI Readiness & Maturity Scan for HR in Retail - Lean static hosting version",
+  "version": "2.0.0",
+  "description": "Eraneos AI Readiness & Maturity Scan with GitHub Integration",
   "main": "index.js",
   "scripts": {
     "start": "react-scripts start",
     "build": "react-scripts build",
     "test": "react-scripts test",
-    "eject": "react-scripts eject",
-    "deploy": "npm run build && echo 'Build complete - ready for static hosting'"
+    "eject": "react-scripts eject"
   },
   "dependencies": {
     "react": "^18.2.0",
@@ -18,18 +17,10 @@
     "react-chartjs-2": "^5.2.0"
   },
   "browserslist": {
-    "production": [
-      ">0.2%",
-      "not dead",
-      "not op_mini all"
-    ],
-    "development": [
-      "last 1 chrome version",
-      "last 1 firefox version",
-      "last 1 safari version"
-    ]
+    "production": [">0.2%", "not dead", "not op_mini all"],
+    "development": ["last 1 chrome version", "last 1 firefox version", "last 1 safari version"]
   },
-  "keywords": ["AI", "maturity", "assessment", "HR", "retail", "eraneos", "static-hosting"],
+  "keywords": ["AI", "maturity", "assessment", "HR", "retail", "eraneos", "github-integration"],
   "author": "Eraneos",
   "license": "MIT",
   "homepage": "."
