@@ -64,7 +64,7 @@ class FallbackStorage {
 class GitHubServiceFixed {
   constructor() {
     // GitHub configuration with environment variable support
-    this.owner = process.env.REACT_APP_GITHUB_OWNER || 'florianliep';
+    this.owner = process.env.REACT_APP_GITHUB_OWNER || 'florianliepe';
     this.repo = process.env.REACT_APP_GITHUB_REPO || 'AI-maturity-scan';
     this.token = process.env.REACT_APP_GITHUB_TOKEN || null;
     this.baseUrl = 'https://api.github.com';
@@ -406,7 +406,7 @@ class GitHubServiceFixed {
         content: updatedContent,
         committer: {
           name: 'AI Maturity Scan Bot',
-          email: 'ai-scan@eraneos.com'
+          email: 'florian.liepen@eraneos.com'
         }
       };
 
@@ -653,3 +653,4 @@ class GitHubServiceFixed {
 }
 
 export default GitHubServiceFixed;
+
