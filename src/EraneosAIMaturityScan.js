@@ -128,15 +128,16 @@ export default function EraneosAIMaturityScan() {
     scoreMax: ''
   });
   const [loading, setLoading] = useState(false);
+  
+  // Admin authentication state
+  const [isAdminAuthenticated, setIsAdminAuthenticated] = useState(false);
+  const [showAdminLogin, setShowAdminLogin] = useState(false);
+  const [adminPassword, setAdminPassword] = useState('');
+  const [adminLoginError, setAdminLoginError] = useState('');
+  
+  // Initialize GitHub service
+  const githubService = useMemo(() => new GitHubService(), []);
 
-// Admin authentication state
-const [isAdminAuthenticated, setIsAdminAuthenticated] = useState(false);
-const [showAdminLogin, setShowAdminLogin] = useState(false);
-const [adminPassword, setAdminPassword] = useState('');
-const [adminLoginError, setAdminLoginError] = useState('');
-
-// Initialize GitHub service
-const githubService = useMemo(() => new GitHubService(), []);
   // Add token validation on component mount
   useEffect(() => {
     const validateGitHubToken = async () => {
@@ -380,50 +381,50 @@ Assessment ID: ${assessmentData.id}
     return rows.map(row => row.map(cell => `"${cell}"`).join(',')).join('\n');
   };
 
- const generateReportLink = (assessmentData) => {
-  const encodedData = btoa(JSON.stringify(assessmentData));
-  return `${window.location.origin}${window.location.pathname}?report=${encodedData}`;
-};
+  const generateReportLink = (assessmentData) => {
+    const encodedData = btoa(JSON.stringify(assessmentData));
+    return `${window.location.origin}${window.location.pathname}?report=${encodedData}`;
+  };
 
-// Admin authentication functions
-const handleAdminLogin = () => {
-  setShowAdminLogin(true);
-  setAdminLoginError('');
-  setAdminPassword('');
-};
-
-const handleAdminPasswordSubmit = (e) => {
-  e.preventDefault();
-  const correctPassword = process.env.REACT_APP_ADMIN_PASSWORD || 'eraneos2024';
-  
-  if (adminPassword === correctPassword) {
-    setIsAdminAuthenticated(true);
-    setShowAdminLogin(false);
-    setAdminPassword('');
+  // Admin authentication functions
+  const handleAdminLogin = () => {
+    setShowAdminLogin(true);
     setAdminLoginError('');
-    // Store authentication in session storage
-    sessionStorage.setItem('adminAuthenticated', 'true');
-  } else {
-    setAdminLoginError('Incorrect password. Please try again.');
     setAdminPassword('');
-  }
-};
+  };
 
-const handleAdminLogout = () => {
-  setIsAdminAuthenticated(false);
-  sessionStorage.removeItem('adminAuthenticated');
-  if (view === 'admin') {
-    setView('form');
-  }
-};
+  const handleAdminPasswordSubmit = (e) => {
+    e.preventDefault();
+    const correctPassword = process.env.REACT_APP_ADMIN_PASSWORD || 'eraneos2024';
+    
+    if (adminPassword === correctPassword) {
+      setIsAdminAuthenticated(true);
+      setShowAdminLogin(false);
+      setAdminPassword('');
+      setAdminLoginError('');
+      // Store authentication in session storage
+      sessionStorage.setItem('adminAuthenticated', 'true');
+    } else {
+      setAdminLoginError('Incorrect password. Please try again.');
+      setAdminPassword('');
+    }
+  };
 
-// Check for existing admin session on component mount
-useEffect(() => {
-  const isAuthenticated = sessionStorage.getItem('adminAuthenticated') === 'true';
-  setIsAdminAuthenticated(isAuthenticated);
-}, []);
+  const handleAdminLogout = () => {
+    setIsAdminAuthenticated(false);
+    sessionStorage.removeItem('adminAuthenticated');
+    if (view === 'admin') {
+      setView('form');
+    }
+  };
 
-const submit = async () => {
+  // Check for existing admin session on component mount
+  useEffect(() => {
+    const isAuthenticated = sessionStorage.getItem('adminAuthenticated') === 'true';
+    setIsAdminAuthenticated(isAuthenticated);
+  }, []);
+
+  const submit = async () => {
     const id = Date.now().toString();
     const assessmentData = { 
       id, 
@@ -593,96 +594,96 @@ const submit = async () => {
 
   return (
     <div className="p-6 max-w-6xl mx-auto bg-gray-50 min-h-screen">
-     <header className="flex items-center justify-between mb-8 bg-white p-6 rounded-lg shadow-sm relative">
-  <div className="flex items-center gap-4">
-    <div className={`w-12 h-12 rounded-lg flex items-center justify-center text-white font-bold text-xl ${ERANEOS_COLORS.brand}`}>E</div>
-    <div>
-      <h1 className="text-3xl font-bold text-gray-900">Eraneos — AI Readiness & Maturity Scan</h1>
-      <p className="text-gray-600">Tailored for HR in Retail — Comprehensive Assessment with Advanced Visualization</p>
-    </div>
-  </div>
-  
-  {/* Admin Login Link */}
-  {!isAdminAuthenticated && (
-    <div className="absolute top-4 right-4">
-      <button
-        onClick={handleAdminLogin}
-        className="text-xs text-gray-400 hover:text-gray-600 transition-colors"
-      >
-        Admin
-      </button>
-    </div>
-  )}
-  
-  {/* Admin Logout */}
-  {isAdminAuthenticated && (
-    <div className="absolute top-4 right-4 flex items-center gap-2">
-      <span className="text-xs text-green-600 font-medium">● Admin</span>
-      <button
-        onClick={handleAdminLogout}
-        className="text-xs text-gray-400 hover:text-gray-600 transition-colors"
-      >
-        Logout
-      </button>
-    </div>
-  )}
-  
-  <div className="text-right">
-    <div className="text-sm text-gray-600 mb-1">Overall Maturity</div>
-    <div 
-      className="px-4 py-2 rounded-lg font-bold text-white text-lg shadow-md"
-      style={{ backgroundColor: maturity.color }}
-    >
-      {maturity.name} ({scores.overall})
-    </div>
-    <div className="text-xs text-gray-500 mt-1">{maturity.description}</div>
-  </div>
-</header>
-{/* Admin Login Modal */}
-{showAdminLogin && (
-  <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-    <div className="bg-white p-6 rounded-lg shadow-lg max-w-md w-full mx-4">
-      <h3 className="text-lg font-semibold mb-4 text-gray-900">Admin Login</h3>
-      <form onSubmit={handleAdminPasswordSubmit}>
-        <div className="mb-4">
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Password
-          </label>
-          <input
-            type="password"
-            value={adminPassword}
-            onChange={(e) => setAdminPassword(e.target.value)}
-            className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            placeholder="Enter admin password"
-            autoFocus
-          />
+      <header className="flex items-center justify-between mb-8 bg-white p-6 rounded-lg shadow-sm relative">
+        <div className="flex items-center gap-4">
+          <div className={`w-12 h-12 rounded-lg flex items-center justify-center text-white font-bold text-xl ${ERANEOS_COLORS.brand}`}>E</div>
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900">Eraneos — AI Readiness & Maturity Scan</h1>
+            <p className="text-gray-600">Tailored for HR in Retail — Comprehensive Assessment with Advanced Visualization</p>
+          </div>
         </div>
-        {adminLoginError && (
-          <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
-            <p className="text-sm text-red-600">{adminLoginError}</p>
+        
+        {/* Admin Login Link */}
+        {!isAdminAuthenticated && (
+          <div className="absolute top-4 right-4">
+            <button
+              onClick={handleAdminLogin}
+              className="text-xs text-gray-400 hover:text-gray-600 transition-colors"
+            >
+              Admin
+            </button>
           </div>
         )}
-        <div className="flex gap-3 justify-end">
-          <button
-            type="button"
-            onClick={() => setShowAdminLogin(false)}
-            className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+        
+        {/* Admin Logout */}
+        {isAdminAuthenticated && (
+          <div className="absolute top-4 right-4 flex items-center gap-2">
+            <span className="text-xs text-green-600 font-medium">● Admin</span>
+            <button
+              onClick={handleAdminLogout}
+              className="text-xs text-gray-400 hover:text-gray-600 transition-colors"
+            >
+              Logout
+            </button>
+          </div>
+        )}
+        
+        <div className="text-right">
+          <div className="text-sm text-gray-600 mb-1">Overall Maturity</div>
+          <div 
+            className="px-4 py-2 rounded-lg font-bold text-white text-lg shadow-md"
+            style={{ backgroundColor: maturity.color }}
           >
-            Cancel
-          </button>
-          <button
-            type="submit"
-            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-          >
-            Login
-          </button>
+            {maturity.name} ({scores.overall})
+          </div>
+          <div className="text-xs text-gray-500 mt-1">{maturity.description}</div>
         </div>
-      </form>
-    </div>
-  </div>
-)}
+      </header>
 
-{view === 'form' && (
+      {/* Admin Login Modal */}
+      {showAdminLogin && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white p-6 rounded-lg shadow-lg max-w-md w-full mx-4">
+            <h3 className="text-lg font-semibold mb-4 text-gray-900">Admin Login</h3>
+            <form onSubmit={handleAdminPasswordSubmit}>
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Password
+                </label>
+                <input
+                  type="password"
+                  value={adminPassword}
+                  onChange={(e) => setAdminPassword(e.target.value)}
+                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  placeholder="Enter admin password"
+                  autoFocus
+                />
+              </div>
+              {adminLoginError && (
+                <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+                  <p className="text-sm text-red-600">{adminLoginError}</p>
+                </div>
+              )}
+              <div className="flex gap-3 justify-end">
+                <button
+                  type="button"
+                  onClick={() => setShowAdminLogin(false)}
+                  className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                >
+                  Login
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
       {view === 'form' && (
         <div className="space-y-6">
           <section className="bg-white p-6 rounded-lg shadow-sm">
@@ -757,28 +758,33 @@ const submit = async () => {
 
           <div className="flex gap-4 justify-center bg-white p-6 rounded-lg shadow-sm">
             <button 
-             <button 
-  onClick={() => setView('dashboard')} 
-  className="px-6 py-3 rounded-lg text-white font-medium transition-colors hover:opacity-90" 
-  style={{ backgroundColor: '#ff7a00' }}
->
-  📈 View Dashboard
-</button>
-{isAdminAuthenticated && (
-  <button 
-    onClick={() => setView('admin')} 
-    className="px-6 py-3 rounded-lg border border-purple-300 text-purple-700 hover:bg-purple-50 transition-colors font-medium"
-  >
-    🔧 Admin Analytics
-  </button>
-)}
-<button 
-  onClick={submit} 
-  className="px-6 py-3 rounded-lg text-white font-medium transition-colors hover:opacity-90" 
-  style={{ backgroundColor: '#0b6b9a' }}
->
-  🚀 Submit & Generate Report
-</button>
+              onClick={exportToCSV} 
+              className="px-6 py-3 rounded-lg border border-gray-300 hover:bg-gray-50 transition-colors font-medium"
+            >
+              📊 Export CSV
+            </button>
+            <button 
+              onClick={() => setView('dashboard')} 
+              className="px-6 py-3 rounded-lg text-white font-medium transition-colors hover:opacity-90" 
+              style={{ backgroundColor: '#ff7a00' }}
+            >
+              📈 View Dashboard
+            </button>
+            {isAdminAuthenticated && (
+              <button 
+                onClick={() => setView('admin')} 
+                className="px-6 py-3 rounded-lg border border-purple-300 text-purple-700 hover:bg-purple-50 transition-colors font-medium"
+              >
+                🔧 Admin Analytics
+              </button>
+            )}
+            <button 
+              onClick={submit} 
+              className="px-6 py-3 rounded-lg text-white font-medium transition-colors hover:opacity-90" 
+              style={{ backgroundColor: '#0b6b9a' }}
+            >
+              🚀 Submit & Generate Report
+            </button>
           </div>
         </div>
       )}
@@ -1463,6 +1469,3 @@ const submit = async () => {
     </div>
   );
 }
-
-
-
