@@ -65,7 +65,7 @@ jobs:
           CI: false
           GENERATE_SOURCEMAP: false
           REACT_APP_GITHUB_TOKEN: ${{ secrets.AI_MATURITY_SCAN_PRODUCTION }}
-          REACT_APP_GITHUB_OWNER: florianliepz
+          REACT_APP_GITHUB_OWNER: florianliepe
           REACT_APP_GITHUB_REPO: AI-maturity-scan
         
       - name: Setup Pages
