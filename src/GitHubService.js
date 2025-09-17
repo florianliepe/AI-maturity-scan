@@ -1,4 +1,70 @@
-// GitHub API Service for Assessment Data Management
+// Fallback Storage for when GitHub API is not available
+class FallbackStorage {
+  constructor() {
+    this.storageKey = 'eraneos_ai_assessments';
+  }
+
+  // Store assessment in localStorage
+  storeAssessment(assessmentData) {
+    try {
+      const existingData = this.getAllAssessments();
+      existingData.push(assessmentData);
+      localStorage.setItem(this.storageKey, JSON.stringify(existingData));
+      console.log('Assessment stored in fallback storage:', assessmentData.id);
+      return { success: true, storage: 'localStorage' };
+    } catch (error) {
+      console.error('Fallback storage failed:', error);
+      return { success: false, error: error.message };
+    }
+  }
+
+  // Get all assessments from localStorage
+  getAllAssessments() {
+    try {
+      const data = localStorage.getItem(this.storageKey);
+      return data ? JSON.parse(data) : [];
+    } catch (error) {
+      console.error('Failed to retrieve from fallback storage:', error);
+      return [];
+    }
+  }
+
+  // Generate export data from localStorage
+  generateExport(format = 'csv') {
+    const assessments = this.getAllAssessments();
+    if (format === 'csv') {
+      return this.generateCSV(assessments);
+    }
+    return JSON.stringify(assessments, null, 2);
+  }
+
+  // Generate CSV from stored assessments
+  generateCSV(assessments) {
+    const rows = [];
+    rows.push(['Assessment ID', 'Organisation', 'Contact', 'Date', 'Overall Score', 'Maturity Level', 'Timestamp']);
+    
+    assessments.forEach(assessment => {
+      rows.push([
+        assessment.id,
+        assessment.metadata.organisation || 'Anonymous',
+        assessment.metadata.contact || '',
+        assessment.metadata.date,
+        assessment.scores.overall,
+        assessment.maturity.name,
+        assessment.timestamp
+      ]);
+    });
+
+    return rows.map(row => row.map(cell => `"${cell}"`).join(',')).join('\n');
+  }
+
+  // Clear all stored assessments
+  clearAll() {
+    localStorage.removeItem(this.storageKey);
+  }
+}
+
+// Enhanced GitHub API Service for Assessment Data Management
 class GitHubService {
   constructor() {
     // GitHub configuration - these should be set as environment variables
@@ -6,11 +72,63 @@ class GitHubService {
     this.repo = 'AI-maturity-scan';
     this.token = process.env.REACT_APP_GITHUB_TOKEN || null;
     this.baseUrl = 'https://api.github.com';
+    this.fallbackStorage = new FallbackStorage();
+    
+    // Enhanced logging
+    console.log('GitHubService initialized:', {
+      hasToken: !!this.token,
+      tokenLength: this.token ? this.token.length : 0,
+      owner: this.owner,
+      repo: this.repo
+    });
   }
 
   // Check if GitHub integration is available
   isAvailable() {
-    return !!this.token;
+    const available = !!this.token;
+    if (!available) {
+      console.warn('GitHub integration not available: Missing REACT_APP_GITHUB_TOKEN');
+    }
+    return available;
+  }
+
+  // Enhanced error handling for API calls
+  async makeGitHubRequest(url, options = {}) {
+    if (!this.isAvailable()) {
+      throw new Error('GitHub token not configured. Please set REACT_APP_GITHUB_TOKEN environment variable.');
+    }
+
+    const defaultOptions = {
+      headers: {
+        'Authorization': `token ${this.token}`,
+        'Content-Type': 'application/json',
+        'Accept': 'application/vnd.github.v3+json'
+      }
+    };
+
+    const mergedOptions = {
+      ...defaultOptions,
+      ...options,
+      headers: { ...defaultOptions.headers, ...options.headers }
+    };
+
+    try {
+      console.log('Making GitHub API request:', url);
+      const response = await fetch(url, mergedOptions);
+      
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ message: 'Unknown error' }));
+        const error = new Error(`GitHub API error (${response.status}): ${errorData.message}`);
+        error.status = response.status;
+        error.response = errorData;
+        throw error;
+      }
+
+      return response;
+    } catch (error) {
+      console.error('GitHub API request failed:', error);
+      throw error;
+    }
   }
 
   // Get current date path for organized storage
@@ -21,11 +139,21 @@ class GitHubService {
     return `${year}/${month}`;
   }
 
-  // Store assessment data in GitHub
+  // Enhanced store assessment with fallback
   async storeAssessment(assessmentData) {
+    // Always store in fallback storage first
+    const fallbackResult = this.fallbackStorage.storeAssessment(assessmentData);
+    console.log('Fallback storage result:', fallbackResult);
+
+    // Try GitHub storage if available
     if (!this.isAvailable()) {
-      console.warn('GitHub token not available, skipping GitHub storage');
-      return { success: false, error: 'GitHub token not configured' };
+      console.warn('GitHub token not available, using fallback storage only');
+      return { 
+        success: true, 
+        storage: 'localStorage',
+        message: 'Stored locally (GitHub token not configured)',
+        fallback: true
+      };
     }
 
     try {
@@ -35,13 +163,8 @@ class GitHubService {
       
       const content = btoa(JSON.stringify(assessmentData, null, 2));
       
-      const response = await fetch(`${this.baseUrl}/repos/${this.owner}/${this.repo}/contents/${filePath}`, {
+      const response = await this.makeGitHubRequest(`${this.baseUrl}/repos/${this.owner}/${this.repo}/contents/${filePath}`, {
         method: 'PUT',
-        headers: {
-          'Authorization': `token ${this.token}`,
-          'Content-Type': 'application/json',
-          'Accept': 'application/vnd.github.v3+json'
-        },
         body: JSON.stringify({
           message: `Add AI maturity assessment: ${assessmentData.metadata.organisation || 'Anonymous'} (${assessmentData.id})`,
           content: content,
@@ -52,11 +175,6 @@ class GitHubService {
         })
       });
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(`GitHub API error: ${errorData.message}`);
-      }
-
       const result = await response.json();
       
       // Update the index file
@@ -64,14 +182,27 @@ class GitHubService {
       
       return { 
         success: true, 
+        storage: 'github',
         sha: result.content.sha,
         url: result.content.html_url,
-        path: filePath
+        path: filePath,
+        message: 'Successfully stored in GitHub repository'
       };
     } catch (error) {
-      console.error('GitHub storage failed:', error);
-      return { success: false, error: error.message };
+      console.error('GitHub storage failed, using fallback:', error);
+      return { 
+        success: true, 
+        storage: 'localStorage',
+        error: error.message,
+        message: 'GitHub failed, stored locally as backup',
+        fallback: true
+      };
     }
+  }
+
+  // Get fallback storage instance
+  getFallbackStorage() {
+    return this.fallbackStorage;
   }
 
   // Update the assessment index for quick access

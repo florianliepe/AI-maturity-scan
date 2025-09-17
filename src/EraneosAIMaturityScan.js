@@ -186,14 +186,36 @@ export default function EraneosAIMaturityScan() {
     URL.revokeObjectURL(url);
   };
 
-  // Real GitHub submission using GitHubService
+  // Enhanced GitHub submission with detailed feedback
   const submitToGitHub = async (assessmentData) => {
     try {
       const result = await githubService.storeAssessment(assessmentData);
       console.log('GitHub Backup Result:', result);
+      
+      // Update submission status with detailed information
+      setSubmissionStatus(prev => ({ 
+        ...prev, 
+        github: result.success ? 'success' : 'failed',
+        githubDetails: {
+          storage: result.storage,
+          message: result.message,
+          fallback: result.fallback,
+          error: result.error
+        }
+      }));
+      
       return result.success;
     } catch (error) {
       console.error('GitHub backup failed:', error);
+      setSubmissionStatus(prev => ({ 
+        ...prev, 
+        github: 'failed',
+        githubDetails: {
+          storage: 'none',
+          message: 'Complete failure - no storage available',
+          error: error.message
+        }
+      }));
       return false;
     }
   };
@@ -747,28 +769,50 @@ Assessment ID: ${assessmentData.id}
             </div>
           </div>
 
-          {/* Submission Status */}
+          {/* Enhanced Submission Status */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
             <div className="p-4 bg-gray-50 border rounded-lg">
-              <h4 className="font-semibold text-gray-800 mb-2">📁 GitHub Backup</h4>
-              <div className="flex items-center gap-2">
+              <h4 className="font-semibold text-gray-800 mb-2">📁 Data Storage</h4>
+              <div className="space-y-2">
                 {submissionStatus.github === 'pending' && (
-                  <>
+                  <div className="flex items-center gap-2">
                     <div className="w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
-                    <span className="text-sm text-blue-600">Backing up to repository...</span>
-                  </>
+                    <span className="text-sm text-blue-600">Processing backup...</span>
+                  </div>
                 )}
-                {submissionStatus.github === 'success' && (
-                  <>
-                    <div className="w-4 h-4 bg-green-500 rounded-full"></div>
-                    <span className="text-sm text-green-600">Successfully backed up to GitHub</span>
-                  </>
+                {submissionStatus.github === 'success' && submissionStatus.githubDetails && (
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-2">
+                      <div className="w-4 h-4 bg-green-500 rounded-full"></div>
+                      <span className="text-sm text-green-600 font-medium">
+                        {submissionStatus.githubDetails.storage === 'github' ? 'GitHub Repository' : 'Local Storage'}
+                      </span>
+                    </div>
+                    <div className="text-xs text-gray-600 ml-6">
+                      {submissionStatus.githubDetails.message}
+                    </div>
+                    {submissionStatus.githubDetails.fallback && (
+                      <div className="text-xs text-orange-600 ml-6">
+                        ⚠️ Using fallback storage (GitHub token not configured)
+                      </div>
+                    )}
+                  </div>
                 )}
-                {submissionStatus.github === 'failed' && (
-                  <>
-                    <div className="w-4 h-4 bg-red-500 rounded-full"></div>
-                    <span className="text-sm text-red-600">GitHub backup failed</span>
-                  </>
+                {submissionStatus.github === 'failed' && submissionStatus.githubDetails && (
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-2">
+                      <div className="w-4 h-4 bg-red-500 rounded-full"></div>
+                      <span className="text-sm text-red-600 font-medium">Storage Failed</span>
+                    </div>
+                    <div className="text-xs text-red-600 ml-6">
+                      {submissionStatus.githubDetails.message || 'Unknown error occurred'}
+                    </div>
+                    {submissionStatus.githubDetails.error && (
+                      <div className="text-xs text-gray-500 ml-6">
+                        Error: {submissionStatus.githubDetails.error}
+                      </div>
+                    )}
+                  </div>
                 )}
               </div>
             </div>
