@@ -12,7 +12,7 @@ import {
   BarElement,
 } from 'chart.js';
 import { Radar, Bar } from 'react-chartjs-2';
-import GitHubService from './GitHubService';
+import GitHubService from './GitHubServiceFixed';
 
 ChartJS.register(
   RadialLinearScale,
@@ -1353,3 +1353,4 @@ Assessment ID: ${assessmentData.id}
     </div>
   );
 }
+
