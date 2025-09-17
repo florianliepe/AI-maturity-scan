@@ -132,6 +132,25 @@ export default function EraneosAIMaturityScan() {
   // Initialize GitHub service
   const githubService = useMemo(() => new GitHubService(), []);
 
+  // Add token validation on component mount
+  useEffect(() => {
+    const validateGitHubToken = async () => {
+      if (githubService.isAvailable()) {
+        console.log('Validating GitHub token...');
+        const validation = await githubService.validateToken();
+        console.log('Token validation result:', validation);
+        
+        if (!validation.valid) {
+          console.warn('GitHub token validation failed:', validation.error);
+        } else {
+          console.log('GitHub token is valid for user:', validation.user);
+        }
+      }
+    };
+    
+    validateGitHubToken();
+  }, [githubService]);
+
   // Check for report data in URL parameters on component mount
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);

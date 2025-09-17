@@ -67,20 +67,76 @@ class FallbackStorage {
 // Enhanced GitHub API Service for Assessment Data Management
 class GitHubService {
   constructor() {
-    // GitHub configuration - these should be set as environment variables
-    this.owner = 'florianliepz';
-    this.repo = 'AI-maturity-scan';
+    // GitHub configuration with environment variable support
+    this.owner = process.env.REACT_APP_GITHUB_OWNER || 'florianliepz';
+    this.repo = process.env.REACT_APP_GITHUB_REPO || 'AI-maturity-scan';
     this.token = process.env.REACT_APP_GITHUB_TOKEN || null;
     this.baseUrl = 'https://api.github.com';
     this.fallbackStorage = new FallbackStorage();
     
-    // Enhanced logging
+    // Enhanced logging with validation
     console.log('GitHubService initialized:', {
       hasToken: !!this.token,
-      tokenLength: this.token ? this.token.length : 0,
+      tokenPrefix: this.token ? this.token.substring(0, 8) + '...' : 'none',
+      tokenValid: this.token ? this.isValidTokenFormat(this.token) : false,
       owner: this.owner,
-      repo: this.repo
+      repo: this.repo,
+      apiUrl: this.baseUrl
     });
+    
+    // Validate token format
+    if (this.token && !this.isValidTokenFormat(this.token)) {
+      console.warn('GitHub token format appears invalid. Expected format: ghp_*, github_pat_*, or gho_*');
+    }
+    
+    // Make service available globally for debugging
+    if (typeof window !== 'undefined') {
+      window.githubService = this;
+    }
+  }
+
+  // Validate GitHub token format
+  isValidTokenFormat(token) {
+    if (!token) return false;
+    
+    return (
+      token.startsWith('ghp_') ||           // Personal access tokens
+      token.startsWith('github_pat_') ||    // Fine-grained personal access tokens
+      token.startsWith('gho_') ||           // OAuth tokens
+      token.startsWith('ghs_') ||           // Server-to-server tokens
+      (token.length >= 40 && /^[a-zA-Z0-9]+$/.test(token)) // Classic tokens
+    );
+  }
+
+  // Enhanced token validation with API test
+  async validateToken() {
+    if (!this.token) {
+      return { valid: false, error: 'No token provided' };
+    }
+
+    if (!this.isValidTokenFormat(this.token)) {
+      return { valid: false, error: 'Invalid token format' };
+    }
+
+    try {
+      const response = await fetch(`${this.baseUrl}/user`, {
+        headers: {
+          'Authorization': `token ${this.token}`,
+          'Accept': 'application/vnd.github.v3+json'
+        }
+      });
+
+      if (response.ok) {
+        const userData = await response.json();
+        console.log('Token validation successful:', userData.login);
+        return { valid: true, user: userData.login };
+      } else {
+        const errorData = await response.json().catch(() => ({ message: 'Unknown error' }));
+        return { valid: false, error: `API error: ${errorData.message}` };
+      }
+    } catch (error) {
+      return { valid: false, error: `Network error: ${error.message}` };
+    }
   }
 
   // Check if GitHub integration is available
