@@ -21,6 +21,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
         
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -36,25 +38,35 @@ jobs:
           npm config set fetch-retry-mintimeout 20000
           npm config set fetch-retry-maxtimeout 120000
           npm config set fetch-retries 5
+          npm config set registry https://registry.npmjs.org/
 
       - name: Remove old dependencies
         run: rm -rf node_modules package-lock.json
           
       - name: Install dependencies with Chart.js
         run: |
-          npm install --no-audit --no-fund || \
-          (echo "Retrying with force..." && npm install --force)
+          npm install --no-audit --no-fund --prefer-offline || \
+          (echo "First attempt failed, clearing cache and retrying..." && \
+           npm cache clean --force && \
+           npm install --no-audit --no-fund --force) || \
+          (echo "Second attempt failed, trying with legacy peer deps..." && \
+           npm install --no-audit --no-fund --force --legacy-peer-deps)
         
       - name: Verify Chart.js installation
         run: |
+          echo "Checking installed packages..."
+          npm list --depth=0
+          echo "Verifying Chart.js installation..."
           npm list chart.js react-chartjs-2 || echo "Chart.js verification complete"
           
-      - name: Build application
+      - name: Build application with GitHub token
         run: npm run build
         env:
           CI: false
           GENERATE_SOURCEMAP: false
           REACT_APP_GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REACT_APP_GITHUB_OWNER: florianliepz
+          REACT_APP_GITHUB_REPO: AI-maturity-scan
         
       - name: Setup Pages
         uses: actions/configure-pages@v4
