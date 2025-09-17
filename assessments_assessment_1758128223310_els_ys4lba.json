@@ -1,0 +1,71 @@
+{
+  "id": "1758128223307",
+  "metadata": {
+    "organisation": "ELS",
+    "contact": "florian.liepe@googlemail.com",
+    "date": "2025-09-17"
+  },
+  "answers": {
+    "g1": 3,
+    "g2": 3,
+    "g3": 3,
+    "d1": 3,
+    "d2": 3,
+    "d3": 3,
+    "p1": 3,
+    "p2": 3,
+    "p3": 3,
+    "pr1": 3,
+    "pr2": 3,
+    "pr3": 3,
+    "t1": 5,
+    "t2": 5,
+    "t3": 5,
+    "e1": 5,
+    "e2": 5,
+    "e3": 5
+  },
+  "scores": {
+    "categories": [
+      {
+        "id": "governance",
+        "title": "Governance & Strategy",
+        "score": 3
+      },
+      {
+        "id": "data",
+        "title": "Data & Integration",
+        "score": 3
+      },
+      {
+        "id": "people",
+        "title": "People & Skills",
+        "score": 3
+      },
+      {
+        "id": "process",
+        "title": "Processes & Use-cases",
+        "score": 3
+      },
+      {
+        "id": "technology",
+        "title": "Technology & Tools",
+        "score": 5
+      },
+      {
+        "id": "ethics",
+        "title": "Ethics, Compliance & Privacy",
+        "score": 5
+      }
+    ],
+    "overall": 3.67
+  },
+  "maturity": {
+    "level": 4,
+    "name": "Managed",
+    "color": "#22c55e",
+    "description": "Measured and controlled AI implementation"
+  },
+  "timestamp": "2025-09-17T16:57:03.307Z",
+  "version": "2.0"
+}
