@@ -64,7 +64,7 @@ class FallbackStorage {
 class GitHubServiceUltimate {
   constructor() {
     // GitHub configuration with environment variable support
-    this.owner = process.env.REACT_APP_GITHUB_OWNER || 'florianliep';
+    this.owner = process.env.REACT_APP_GITHUB_OWNER || 'florianliepe';
     this.repo = process.env.REACT_APP_GITHUB_REPO || 'AI-maturity-scan';
     this.token = process.env.REACT_APP_GITHUB_TOKEN || null;
     this.baseUrl = 'https://api.github.com';
@@ -607,3 +607,4 @@ class GitHubServiceUltimate {
 }
 
 export default GitHubServiceUltimate;
+
