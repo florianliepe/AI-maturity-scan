@@ -12,7 +12,7 @@ import {
   BarElement,
 } from 'chart.js';
 import { Radar, Bar } from 'react-chartjs-2';
-import GitHubService from './GitHubServiceRobust-Enhanced';
+import GitHubService from './GitHubServiceRobust';
 
 ChartJS.register(
   RadialLinearScale,
@@ -726,3 +726,4 @@ export default function EraneosAIMaturityScan() {
               <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
                 <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-
+
