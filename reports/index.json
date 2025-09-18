@@ -1,5 +1,15 @@
 [
   {
+    "id": "1758231424061",
+    "timestamp": "2025-09-18T21:37:04.061Z",
+    "organisation": "ABC",
+    "contact": "florian.liepe@eraneos.com",
+    "date": "2025-09-18",
+    "overallScore": 2.89,
+    "maturityLevel": "Defined",
+    "filePath": "reports/2025/09/assessment-1758231424061-ABC.json"
+  },
+  {
     "id": "1758124171279",
     "timestamp": "2025-09-17T15:49:31.280Z",
     "organisation": "Test",
