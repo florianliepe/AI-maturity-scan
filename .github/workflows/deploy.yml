@@ -1,4 +1,4 @@
-name: Deploy AI Maturity Scan - AJV Fixed
+name: Deploy AI Maturity Scan - Clean Resolutions
 
 on:
   push:
@@ -31,22 +31,32 @@ jobs:
         run: |
           rm -rf node_modules package-lock.json || true
           npm cache clean --force
+          echo "Environment cleaned successfully"
           
-      - name: Fix ajv dependency conflict
+      - name: Install dependencies with resolutions
         run: |
-          echo "Installing with ajv 6.x compatibility..."
-          npm install ajv@^6.12.6 ajv-keywords@^3.5.2 --save-exact
+          echo "Installing dependencies with ajv 6.x resolution..."
           npm install --legacy-peer-deps --no-audit --no-fund
+          echo "Dependencies installed successfully"
           
-      - name: Verify ajv installation
+      - name: Verify ajv resolution
         run: |
-          echo "Checking ajv version..."
-          npm list ajv || echo "ajv check complete"
-          echo "Checking for ajv/dist/compile/codegen..."
-          ls -la node_modules/ajv/dist/compile/ || echo "ajv structure check complete"
+          echo "Checking resolved ajv version..."
+          npm list ajv || echo "ajv version check complete"
+          echo "Verifying ajv file structure..."
+          if [ -f "node_modules/ajv/dist/compile/codegen/index.js" ]; then
+            echo "✅ ajv/dist/compile/codegen found - compatible structure"
+          else
+            echo "❌ ajv/dist/compile/codegen not found"
+            ls -la node_modules/ajv/dist/ || echo "ajv dist structure:"
+            ls -la node_modules/ajv/dist/compile/ || echo "ajv compile structure:"
+          fi
           
       - name: Build application
-        run: npm run build
+        run: |
+          echo "Starting React build..."
+          npm run build
+          echo "Build completed successfully!"
         env:
           CI: false
           GENERATE_SOURCEMAP: false
@@ -56,8 +66,17 @@ jobs:
         
       - name: Verify build output
         run: |
-          echo "Build completed successfully!"
-          ls -la build/ || echo "Build verification complete"
+          echo "Verifying build output..."
+          if [ -d "build" ]; then
+            echo "✅ Build directory created"
+            echo "Build contents:"
+            ls -la build/
+            echo "Build size:"
+            du -sh build/
+          else
+            echo "❌ Build directory not found"
+            exit 1
+          fi
           
       - name: Setup Pages
         uses: actions/configure-pages@v4
