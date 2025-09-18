@@ -1,473 +1,579 @@
-// Enhanced GitHub Service with Delete Functionality - Version 2.2
-class GitHubServiceRobust {
+// Fallback Storage for when GitHub API is not available
+class FallbackStorage {
   constructor() {
+    this.storageKey = 'eraneos_ai_assessments';
+  }
+
+  // Store assessment in localStorage
+  storeAssessment(assessmentData) {
+    try {
+      const existingData = this.getAllAssessments();
+      existingData.push(assessmentData);
+      localStorage.setItem(this.storageKey, JSON.stringify(existingData));
+      console.log('Assessment stored in fallback storage:', assessmentData.id);
+      return { success: true, storage: 'localStorage' };
+    } catch (error) {
+      console.error('Fallback storage failed:', error);
+      return { success: false, error: error.message };
+    }
+  }
+
+  // Get all assessments from localStorage
+  getAllAssessments() {
+    try {
+      const data = localStorage.getItem(this.storageKey);
+      return data ? JSON.parse(data) : [];
+    } catch (error) {
+      console.error('Failed to retrieve from fallback storage:', error);
+      return [];
+    }
+  }
+
+  // Generate export data from localStorage
+  generateExport(format = 'csv') {
+    const assessments = this.getAllAssessments();
+    if (format === 'csv') {
+      return this.generateCSV(assessments);
+    }
+    return JSON.stringify(assessments, null, 2);
+  }
+
+  // Generate CSV from stored assessments
+  generateCSV(assessments) {
+    const rows = [];
+    rows.push(['Assessment ID', 'Organisation', 'Contact', 'Date', 'Overall Score', 'Maturity Level', 'Timestamp']);
+    
+    assessments.forEach(assessment => {
+      rows.push([
+        assessment.id,
+        assessment.metadata.organisation || 'Anonymous',
+        assessment.metadata.contact || '',
+        assessment.metadata.date,
+        assessment.scores.overall,
+        assessment.maturity.name,
+        assessment.timestamp
+      ]);
+    });
+
+    return rows.map(row => row.map(cell => `"${cell}"`).join(',')).join('\n');
+  }
+
+  // Clear all stored assessments
+  clearAll() {
+    localStorage.removeItem(this.storageKey);
+  }
+}
+
+// Enhanced GitHub API Service for Assessment Data Management
+class GitHubService {
+  constructor() {
+    // GitHub configuration with Vite environment variable support
     this.owner = import.meta.env.VITE_GITHUB_OWNER || 'florianliepe';
     this.repo = import.meta.env.VITE_GITHUB_REPO || 'AI-maturity-scan';
     this.token = import.meta.env.VITE_GITHUB_TOKEN || null;
-    this.maxRetries = 3;
-    this.retryDelay = 1000;
-    this.enableLogging = true;
-    this.log('GitHubService initialized', { hasToken: !!this.token });
+    this.baseUrl = 'https://api.github.com';
+    this.fallbackStorage = new FallbackStorage();
+    
+    // Enhanced logging with validation
+    console.log('GitHubService initialized:', {
+      hasToken: !!this.token,
+      tokenPrefix: this.token ? this.token.substring(0, 8) + '...' : 'none',
+      tokenValid: this.token ? this.isValidTokenFormat(this.token) : false,
+      owner: this.owner,
+      repo: this.repo,
+      apiUrl: this.baseUrl
+    });
+    
+    // Validate token format
+    if (this.token && !this.isValidTokenFormat(this.token)) {
+      console.warn('GitHub token format appears invalid. Expected format: ghp_*, github_pat_*, or gho_*');
+    }
+    
+    // Make service available globally for debugging
+    if (typeof window !== 'undefined') {
+      window.githubService = this;
+    }
   }
 
-  log(message, data = null) {
-    if (this.enableLogging) console.log(`[GitHubService] ${message}`, data || '');
+  // Validate GitHub token format
+  isValidTokenFormat(token) {
+    if (!token) return false;
+    
+    return (
+      token.startsWith('ghp_') ||           // Personal access tokens
+      token.startsWith('github_pat_') ||    // Fine-grained personal access tokens
+      token.startsWith('gho_') ||           // OAuth tokens
+      token.startsWith('ghs_') ||           // Server-to-server tokens
+      (token.length >= 40 && /^[a-zA-Z0-9]+$/.test(token)) // Classic tokens
+    );
   }
 
-  error(message, error = null) {
-    console.error(`[GitHubService ERROR] ${message}`, error || '');
-  }
-
+  // Enhanced token validation with API test
   async validateToken() {
     if (!this.token) {
-      return { valid: false, error: 'No GitHub token configured' };
+      return { valid: false, error: 'No token provided' };
     }
+
+    if (!this.isValidTokenFormat(this.token)) {
+      return { valid: false, error: 'Invalid token format' };
+    }
+
     try {
       const response = await fetch(`${this.baseUrl}/user`, {
         headers: {
           'Authorization': `token ${this.token}`,
-          'Accept': 'application/vnd.github.v3+json',
-          'User-Agent': 'AI-Maturity-Scan-App'
+          'Accept': 'application/vnd.github.v3+json'
         }
       });
+
       if (response.ok) {
-        const user = await response.json();
-        return { valid: true, user: user.login };
+        const userData = await response.json();
+        console.log('Token validation successful:', userData.login);
+        return { valid: true, user: userData.login };
       } else {
-        const errorData = await response.json().catch(() => ({}));
-        return { valid: false, error: `HTTP ${response.status}: ${errorData.message || 'Invalid token'}` };
+        const errorData = await response.json().catch(() => ({ message: 'Unknown error' }));
+        return { valid: false, error: `API error: ${errorData.message}` };
       }
     } catch (error) {
       return { valid: false, error: `Network error: ${error.message}` };
     }
   }
 
-  getHeaders() {
-    const headers = {
-      'Accept': 'application/vnd.github.v3+json',
-      'Content-Type': 'application/json',
-      'User-Agent': 'AI-Maturity-Scan-App'
-    };
-    if (this.token) headers['Authorization'] = `token ${this.token}`;
-    return headers;
-  }
-
-  async retryOperation(operation, operationName, maxRetries = this.maxRetries) {
-    for (let attempt = 1; attempt <= maxRetries; attempt++) {
-      try {
-        const result = await operation();
-        if (result.success || attempt === maxRetries) return result;
-        const delay = this.retryDelay * Math.pow(2, attempt - 1);
-        await new Promise(resolve => setTimeout(resolve, delay));
-      } catch (error) {
-        if (attempt === maxRetries) {
-          return { success: false, error: error.message, message: `All ${maxRetries} attempts failed: ${error.message}` };
-        }
-        const delay = this.retryDelay * Math.pow(2, attempt - 1);
-        await new Promise(resolve => setTimeout(resolve, delay));
-      }
+  // Check if GitHub integration is available
+  isAvailable() {
+    const available = !!this.token;
+    if (!available) {
+      console.warn('GitHub integration not available: Missing VITE_GITHUB_TOKEN');
     }
+    return available;
   }
 
-  async createFile(path, content, message) {
-    const operation = async () => {
-      try {
-        const response = await fetch(`${this.baseUrl}/repos/${this.owner}/${this.repo}/contents/${path}`, {
-          method: 'PUT',
-          headers: this.getHeaders(),
-          body: JSON.stringify({
-            message: message,
-            content: btoa(unescape(encodeURIComponent(content))),
-            branch: 'main'
-          })
-        });
-        if (response.ok) {
-          const result = await response.json();
-          return { success: true, storage: 'github', message: 'File stored successfully', sha: result.content.sha, path: path };
-        } else if (response.status === 422) {
-          return await this.updateExistingFile(path, content, message);
-        } else {
-          const errorData = await response.json().catch(() => ({}));
-          throw new Error(`HTTP ${response.status}: ${errorData.message || 'Unknown error'}`);
-        }
-      } catch (error) {
+  // Enhanced error handling for API calls
+  async makeGitHubRequest(url, options = {}) {
+    if (!this.isAvailable()) {
+      throw new Error('GitHub token not configured. Please set VITE_GITHUB_TOKEN environment variable.');
+    }
+
+    const defaultOptions = {
+      headers: {
+        'Authorization': `token ${this.token}`,
+        'Content-Type': 'application/json',
+        'Accept': 'application/vnd.github.v3+json'
+      }
+    };
+
+    const mergedOptions = {
+      ...defaultOptions,
+      ...options,
+      headers: { ...defaultOptions.headers, ...options.headers }
+    };
+
+    try {
+      console.log('Making GitHub API request:', url);
+      const response = await fetch(url, mergedOptions);
+      
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ message: 'Unknown error' }));
+        const error = new Error(`GitHub API error (${response.status}): ${errorData.message}`);
+        error.status = response.status;
+        error.response = errorData;
         throw error;
       }
-    };
-    return await this.retryOperation(operation, `Create file: ${path}`);
-  }
 
-  async updateExistingFile(path, content, message) {
-    try {
-      const getResponse = await fetch(`${this.baseUrl}/repos/${this.owner}/${this.repo}/contents/${path}`, {
-        headers: this.getHeaders()
-      });
-      if (getResponse.ok) {
-        const currentFile = await getResponse.json();
-        const updateResponse = await fetch(`${this.baseUrl}/repos/${this.owner}/${this.repo}/contents/${path}`, {
-          method: 'PUT',
-          headers: this.getHeaders(),
-          body: JSON.stringify({
-            message: message,
-            content: btoa(unescape(encodeURIComponent(content))),
-            sha: currentFile.sha,
-            branch: 'main'
-          })
-        });
-        if (updateResponse.ok) {
-          const result = await updateResponse.json();
-          return { success: true, storage: 'github', message: 'File updated successfully', sha: result.content.sha, path: path };
-        } else {
-          const errorData = await updateResponse.json().catch(() => ({}));
-          throw new Error(`Update failed: HTTP ${updateResponse.status}: ${errorData.message || 'Unknown error'}`);
-        }
-      } else {
-        throw new Error(`Could not retrieve existing file: HTTP ${getResponse.status}`);
-      }
+      return response;
     } catch (error) {
+      console.error('GitHub API request failed:', error);
       throw error;
     }
   }
 
-  // NEW: Delete file method
-  async deleteFile(path, message) {
-    const operation = async () => {
-      try {
-        const getResponse = await fetch(`${this.baseUrl}/repos/${this.owner}/${this.repo}/contents/${path}`, {
-          headers: this.getHeaders()
-        });
-        if (!getResponse.ok) {
-          if (getResponse.status === 404) {
-            return { success: true, storage: 'github', message: 'File not found (already deleted)', path: path };
-          }
-          throw new Error(`Could not retrieve file for deletion: HTTP ${getResponse.status}`);
-        }
-        const fileData = await getResponse.json();
-        const deleteResponse = await fetch(`${this.baseUrl}/repos/${this.owner}/${this.repo}/contents/${path}`, {
-          method: 'DELETE',
-          headers: this.getHeaders(),
-          body: JSON.stringify({ message: message, sha: fileData.sha, branch: 'main' })
-        });
-        if (deleteResponse.ok) {
-          return { success: true, storage: 'github', message: 'File deleted successfully', path: path };
-        } else {
-          const errorData = await deleteResponse.json().catch(() => ({}));
-          throw new Error(`Delete failed: HTTP ${deleteResponse.status}: ${errorData.message || 'Unknown error'}`);
-        }
-      } catch (error) {
-        throw error;
-      }
-    };
-    return await this.retryOperation(operation, `Delete file: ${path}`);
+  // Get current date path for organized storage
+  getDatePath() {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    return `${year}/${month}`;
   }
 
+  // Enhanced store assessment with fallback
   async storeAssessment(assessmentData) {
-    const tokenValidation = await this.validateToken();
-    if (!tokenValidation.valid) {
-      return await this.fallbackStorage(assessmentData, 'Token validation failed');
-    }
+    // Always store in fallback storage first
+    const fallbackResult = this.fallbackStorage.storeAssessment(assessmentData);
+    console.log('Fallback storage result:', fallbackResult);
 
-    const timestamp = new Date().toISOString();
-    const dateFolder = timestamp.slice(0, 10).replace(/-/g, '/');
-    const filename = `assessment-${assessmentData.id}.json`;
-    const filePath = `reports/${dateFolder}/${filename}`;
-
-    const fileContent = JSON.stringify({
-      ...assessmentData,
-      storedAt: timestamp,
-      version: '2.1',
-      storage: 'github'
-    }, null, 2);
-
-    const commitMessage = `Add AI maturity assessment: ${assessmentData.metadata.organisation || 'Anonymous'} (${assessmentData.id})`;
-    const result = await this.createFile(filePath, fileContent, commitMessage);
-
-    if (result.success) {
-      await this.updateAssessmentIndex(assessmentData, filePath);
-      return { ...result, filePath: filePath, url: `https://github.com/${this.owner}/${this.repo}/blob/main/${filePath}` };
-    } else {
-      return await this.fallbackStorage(assessmentData, result.error);
-    }
-  }
-
-  // NEW: Delete assessment method
-  async deleteAssessment(assessmentId, filePath = null) {
-    const tokenValidation = await this.validateToken();
-    if (!tokenValidation.valid) {
-      return { success: false, error: 'Token validation failed', message: 'Cannot delete from GitHub: ' + tokenValidation.error };
-    }
-
-    let deletionResults = {
-      github: { success: false, message: '' },
-      localStorage: { success: false, message: '' },
-      index: { success: false, message: '' }
-    };
-
-    // Delete from GitHub repository file
-    if (filePath) {
-      try {
-        const commitMessage = `Delete AI maturity assessment: ${assessmentId}`;
-        const deleteResult = await this.deleteFile(filePath, commitMessage);
-        deletionResults.github = deleteResult.success ? 
-          { success: true, message: 'Assessment file deleted from GitHub repository' } :
-          { success: false, message: deleteResult.message || 'Failed to delete from GitHub' };
-      } catch (error) {
-        deletionResults.github = { success: false, message: `GitHub deletion error: ${error.message}` };
-      }
-    } else {
-      deletionResults.github = { success: true, message: 'No file path provided, skipping GitHub file deletion' };
-    }
-
-    // Remove from assessment index
-    try {
-      const indexUpdateResult = await this.removeFromAssessmentIndex(assessmentId);
-      deletionResults.index = indexUpdateResult;
-    } catch (error) {
-      deletionResults.index = { success: false, message: `Index update error: ${error.message}` };
-    }
-
-    // Remove from localStorage
-    try {
-      const localStorageResult = this.removeFromLocalStorage(assessmentId);
-      deletionResults.localStorage = localStorageResult;
-    } catch (error) {
-      deletionResults.localStorage = { success: false, message: `localStorage error: ${error.message}` };
-    }
-
-    const overallSuccess = deletionResults.github.success && deletionResults.index.success;
-    return {
-      success: overallSuccess,
-      assessmentId: assessmentId,
-      deletionResults: deletionResults,
-      message: overallSuccess ? 'Assessment deleted successfully from all storage locations' : 'Assessment deletion completed with some errors'
-    };
-  }
-
-  // NEW: Bulk delete method
-  async deleteMultipleAssessments(assessmentIds, assessmentData = []) {
-    const results = [];
-    let successCount = 0;
-    let failureCount = 0;
-
-    for (const assessmentId of assessmentIds) {
-      try {
-        const assessment = assessmentData.find(a => a.id === assessmentId);
-        const filePath = assessment ? assessment.filePath : null;
-        const deleteResult = await this.deleteAssessment(assessmentId, filePath);
-        
-        results.push({
-          assessmentId,
-          organisation: assessment ? assessment.organisation : 'Unknown',
-          success: deleteResult.success,
-          message: deleteResult.message,
-          details: deleteResult.deletionResults
-        });
-
-        if (deleteResult.success) successCount++;
-        else failureCount++;
-
-        await new Promise(resolve => setTimeout(resolve, 200));
-      } catch (error) {
-        results.push({
-          assessmentId,
-          success: false,
-          message: `Deletion error: ${error.message}`,
-          details: null
-        });
-        failureCount++;
-      }
-    }
-
-    return {
-      success: failureCount === 0,
-      totalProcessed: assessmentIds.length,
-      successCount,
-      failureCount,
-      results,
-      message: `Bulk deletion completed: ${successCount} successful, ${failureCount} failed`
-    };
-  }
-
-  async fallbackStorage(assessmentData, reason) {
-    try {
-      const storageKey = `assessment_${assessmentData.id}`;
-      const storageData = {
-        ...assessmentData,
-        storedAt: new Date().toISOString(),
+    // Try GitHub storage if available
+    if (!this.isAvailable()) {
+      console.warn('GitHub token not available, using fallback storage only');
+      return { 
+        success: true, 
         storage: 'localStorage',
-        fallbackReason: reason
+        message: 'Stored locally (GitHub token not configured)',
+        fallback: true
       };
-      localStorage.setItem(storageKey, JSON.stringify(storageData));
+    }
+
+    try {
+      const datePath = this.getDatePath();
+      const fileName = `assessment-${assessmentData.id}-${assessmentData.metadata.organisation || 'anonymous'}.json`;
+      const filePath = `reports/${datePath}/${fileName}`;
       
-      const indexKey = 'assessments_index';
-      const existingIndex = JSON.parse(localStorage.getItem(indexKey) || '[]');
-      existingIndex.push({
-        id: assessmentData.id,
-        organisation: assessmentData.metadata.organisation,
-        date: assessmentData.metadata.date,
-        timestamp: storageData.storedAt,
-        storageKey: storageKey
+      const content = btoa(JSON.stringify(assessmentData, null, 2));
+      
+      const response = await this.makeGitHubRequest(`${this.baseUrl}/repos/${this.owner}/${this.repo}/contents/${filePath}`, {
+        method: 'PUT',
+        body: JSON.stringify({
+          message: `Add AI maturity assessment: ${assessmentData.metadata.organisation || 'Anonymous'} (${assessmentData.id})`,
+          content: content,
+          committer: {
+            name: 'AI Maturity Scan Bot',
+            email: 'ai-scan@eraneos.com'
+          }
+        })
       });
-      localStorage.setItem(indexKey, JSON.stringify(existingIndex));
 
-      return {
-        success: true,
-        storage: 'localStorage',
-        message: `Data stored locally due to GitHub issue: ${reason}`,
-        fallback: true,
-        storageKey: storageKey,
-        error: reason
+      const result = await response.json();
+      
+      // Update the index file
+      await this.updateIndex(assessmentData);
+      
+      return { 
+        success: true, 
+        storage: 'github',
+        sha: result.content.sha,
+        url: result.content.html_url,
+        path: filePath,
+        message: 'Successfully stored in GitHub repository'
       };
-    } catch (fallbackError) {
-      return {
-        success: false,
-        storage: 'none',
-        message: `Complete storage failure: GitHub (${reason}) and localStorage (${fallbackError.message}) both failed`,
-        error: `Primary: ${reason}, Fallback: ${fallbackError.message}`
+    } catch (error) {
+      console.error('GitHub storage failed, using fallback:', error);
+      return { 
+        success: true, 
+        storage: 'localStorage',
+        error: error.message,
+        message: 'GitHub failed, stored locally as backup',
+        fallback: true
       };
     }
   }
 
-  async updateAssessmentIndex(assessmentData, filePath) {
+  // Get fallback storage instance
+  getFallbackStorage() {
+    return this.fallbackStorage;
+  }
+
+  // Update the assessment index for quick access
+  async updateIndex(newAssessment) {
     try {
-      const indexPath = 'assessments_index.json';
+      const indexPath = 'reports/index.json';
       let currentIndex = [];
       
+      // Try to get existing index
       try {
         const indexResponse = await fetch(`${this.baseUrl}/repos/${this.owner}/${this.repo}/contents/${indexPath}`, {
-          headers: this.getHeaders()
+          headers: {
+            'Authorization': `token ${this.token}`,
+            'Accept': 'application/vnd.github.v3+json'
+          }
         });
+        
         if (indexResponse.ok) {
-          const indexFile = await indexResponse.json();
-          const indexContent = atob(indexFile.content);
-          currentIndex = JSON.parse(indexContent);
+          const indexData = await indexResponse.json();
+          currentIndex = JSON.parse(atob(indexData.content));
         }
       } catch (error) {
-        this.log('No existing index found, creating new one');
+        // Index doesn't exist yet, start with empty array
+        console.log('Creating new index file');
       }
 
+      // Add new assessment to index
       const indexEntry = {
-        id: assessmentData.id,
-        organisation: assessmentData.metadata.organisation || 'Anonymous',
-        contact: assessmentData.metadata.contact || '',
-        date: assessmentData.metadata.date,
-        timestamp: assessmentData.timestamp,
-        overallScore: assessmentData.scores.overall,
-        maturityLevel: assessmentData.maturity.name,
-        filePath: filePath,
-        version: assessmentData.version || '2.1'
+        id: newAssessment.id,
+        timestamp: newAssessment.timestamp,
+        organisation: newAssessment.metadata.organisation || 'Anonymous',
+        contact: newAssessment.metadata.contact,
+        date: newAssessment.metadata.date,
+        overallScore: newAssessment.scores.overall,
+        maturityLevel: newAssessment.maturity.name,
+        filePath: `reports/${this.getDatePath()}/assessment-${newAssessment.id}-${newAssessment.metadata.organisation || 'anonymous'}.json`
       };
 
       currentIndex.push(indexEntry);
-      const indexContent = JSON.stringify(currentIndex, null, 2);
-      const indexMessage = `Update assessment index with ${assessmentData.metadata.organisation || 'Anonymous'} assessment`;
-      await this.createFile(indexPath, indexContent, indexMessage);
-    } catch (error) {
-      this.error('Failed to update assessment index', error);
-    }
-  }
-
-  // NEW: Remove from index method
-  async removeFromAssessmentIndex(assessmentId) {
-    try {
-      const indexPath = 'assessments_index.json';
-      let currentIndex = [];
       
+      // Sort by timestamp (newest first)
+      currentIndex.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+
+      const updatedContent = btoa(JSON.stringify(currentIndex, null, 2));
+      
+      // Get current index SHA if it exists
+      let sha = null;
       try {
-        const indexResponse = await fetch(`${this.baseUrl}/repos/${this.owner}/${this.repo}/contents/${indexPath}`, {
-          headers: this.getHeaders()
+        const currentIndexResponse = await fetch(`${this.baseUrl}/repos/${this.owner}/${this.repo}/contents/${indexPath}`, {
+          headers: {
+            'Authorization': `token ${this.token}`,
+            'Accept': 'application/vnd.github.v3+json'
+          }
         });
-        if (indexResponse.ok) {
-          const indexFile = await indexResponse.json();
-          const indexContent = atob(indexFile.content);
-          currentIndex = JSON.parse(indexContent);
-        } else {
-          return { success: false, message: 'Assessment index not found' };
+        if (currentIndexResponse.ok) {
+          const currentIndexData = await currentIndexResponse.json();
+          sha = currentIndexData.sha;
         }
       } catch (error) {
-        return { success: false, message: 'Failed to retrieve assessment index' };
+        // No existing index
       }
 
-      const originalLength = currentIndex.length;
-      currentIndex = currentIndex.filter(assessment => assessment.id !== assessmentId);
-      
-      if (currentIndex.length === originalLength) {
-        return { success: true, message: 'Assessment not found in index (may have been already removed)' };
+      const indexUpdateBody = {
+        message: `Update assessment index with ${newAssessment.metadata.organisation || 'Anonymous'} assessment`,
+        content: updatedContent,
+        committer: {
+          name: 'AI Maturity Scan Bot',
+          email: 'ai-scan@eraneos.com'
+        }
+      };
+
+      if (sha) {
+        indexUpdateBody.sha = sha;
       }
 
-      const indexContent = JSON.stringify(currentIndex, null, 2);
-      const indexMessage = `Remove assessment ${assessmentId} from index`;
-      const updateResult = await this.createFile(indexPath, indexContent, indexMessage);
-      
-      return updateResult.success ? 
-        { success: true, message: 'Assessment removed from index successfully' } :
-        { success: false, message: 'Failed to update index after removal' };
-    } catch (error) {
-      return { success: false, message: `Index removal error: ${error.message}` };
-    }
-  }
-
-  // NEW: Remove from localStorage method
-  removeFromLocalStorage(assessmentId) {
-    try {
-      const storageKey = `assessment_${assessmentId}`;
-      localStorage.removeItem(storageKey);
-
-      const indexKey = 'assessments_index';
-      const existingIndex = JSON.parse(localStorage.getItem(indexKey) || '[]');
-      const updatedIndex = existingIndex.filter(assessment => assessment.id !== assessmentId);
-      localStorage.setItem(indexKey, JSON.stringify(updatedIndex));
-
-      return { success: true, message: 'Assessment removed from localStorage successfully' };
-    } catch (error) {
-      return { success: false, message: `localStorage removal error: ${error.message}` };
-    }
-  }
-
-  async getAllAssessments() {
-    try {
-      const indexResponse = await fetch(`${this.baseUrl}/repos/${this.owner}/${this.repo}/contents/assessments_index.json`, {
-        headers: this.getHeaders()
+      await fetch(`${this.baseUrl}/repos/${this.owner}/${this.repo}/contents/${indexPath}`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `token ${this.token}`,
+          'Content-Type': 'application/json',
+          'Accept': 'application/vnd.github.v3+json'
+        },
+        body: JSON.stringify(indexUpdateBody)
       });
-      if (indexResponse.ok) {
-        const indexFile = await indexResponse.json();
-        const indexContent = atob(indexFile.content);
-        const assessments = JSON.parse(indexContent);
-        return { success: true, assessments: assessments, source: 'github_index' };
-      }
+
     } catch (error) {
-      this.error('Failed to retrieve from GitHub index', error);
+      console.error('Failed to update index:', error);
+    }
+  }
+
+  // Retrieve all assessments from GitHub
+  async getAllAssessments() {
+    if (!this.isAvailable()) {
+      return { success: false, error: 'GitHub token not configured' };
     }
 
     try {
-      const localIndex = JSON.parse(localStorage.getItem('assessments_index') || '[]');
-      return { success: true, assessments: localIndex, source: 'localStorage' };
+      const indexPath = 'reports/index.json';
+      const response = await fetch(`${this.baseUrl}/repos/${this.owner}/${this.repo}/contents/${indexPath}`, {
+        headers: {
+          'Authorization': `token ${this.token}`,
+          'Accept': 'application/vnd.github.v3+json'
+        }
+      });
+
+      if (!response.ok) {
+        return { success: true, assessments: [] }; // No assessments yet
+      }
+
+      const indexData = await response.json();
+      const assessments = JSON.parse(atob(indexData.content));
+      
+      return { success: true, assessments };
     } catch (error) {
-      return { success: false, assessments: [], error: 'No assessments found in any storage location' };
+      console.error('Failed to retrieve assessments:', error);
+      return { success: false, error: error.message };
     }
   }
 
-  async generateBulkExport(assessments, format = 'csv') {
+  // Retrieve specific assessment data
+  async getAssessment(filePath) {
+    if (!this.isAvailable()) {
+      return { success: false, error: 'GitHub token not configured' };
+    }
+
+    try {
+      const response = await fetch(`${this.baseUrl}/repos/${this.owner}/${this.repo}/contents/${filePath}`, {
+        headers: {
+          'Authorization': `token ${this.token}`,
+          'Accept': 'application/vnd.github.v3+json'
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error(`Failed to retrieve assessment: ${response.statusText}`);
+      }
+
+      const fileData = await response.json();
+      const assessmentData = JSON.parse(atob(fileData.content));
+      
+      return { success: true, data: assessmentData };
+    } catch (error) {
+      console.error('Failed to retrieve assessment:', error);
+      return { success: false, error: error.message };
+    }
+  }
+
+  // Delete assessment functionality
+  async deleteAssessment(assessmentId, filePath) {
+    if (!this.isAvailable()) {
+      return { success: false, error: 'GitHub token not configured' };
+    }
+
+    try {
+      // Get file info first to get SHA
+      const fileResponse = await fetch(`${this.baseUrl}/repos/${this.owner}/${this.repo}/contents/${filePath}`, {
+        headers: {
+          'Authorization': `token ${this.token}`,
+          'Accept': 'application/vnd.github.v3+json'
+        }
+      });
+
+      if (!fileResponse.ok) {
+        return { success: false, error: 'Assessment file not found' };
+      }
+
+      const fileData = await fileResponse.json();
+
+      // Delete the file
+      const deleteResponse = await fetch(`${this.baseUrl}/repos/${this.owner}/${this.repo}/contents/${filePath}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `token ${this.token}`,
+          'Content-Type': 'application/json',
+          'Accept': 'application/vnd.github.v3+json'
+        },
+        body: JSON.stringify({
+          message: `Delete assessment: ${assessmentId}`,
+          sha: fileData.sha,
+          committer: {
+            name: 'AI Maturity Scan Bot',
+            email: 'ai-scan@eraneos.com'
+          }
+        })
+      });
+
+      if (!deleteResponse.ok) {
+        const errorData = await deleteResponse.json().catch(() => ({ message: 'Unknown error' }));
+        return { success: false, error: `Delete failed: ${errorData.message}` };
+      }
+
+      // Update index to remove the assessment
+      await this.removeFromIndex(assessmentId);
+
+      return { success: true, message: 'Assessment deleted successfully' };
+    } catch (error) {
+      console.error('Delete assessment failed:', error);
+      return { success: false, error: error.message };
+    }
+  }
+
+  // Remove assessment from index
+  async removeFromIndex(assessmentId) {
+    try {
+      const indexPath = 'reports/index.json';
+      const indexResponse = await fetch(`${this.baseUrl}/repos/${this.owner}/${this.repo}/contents/${indexPath}`, {
+        headers: {
+          'Authorization': `token ${this.token}`,
+          'Accept': 'application/vnd.github.v3+json'
+        }
+      });
+
+      if (indexResponse.ok) {
+        const indexData = await indexResponse.json();
+        let currentIndex = JSON.parse(atob(indexData.content));
+        
+        // Remove the assessment from index
+        currentIndex = currentIndex.filter(assessment => assessment.id !== assessmentId);
+        
+        const updatedContent = btoa(JSON.stringify(currentIndex, null, 2));
+        
+        await fetch(`${this.baseUrl}/repos/${this.owner}/${this.repo}/contents/${indexPath}`, {
+          method: 'PUT',
+          headers: {
+            'Authorization': `token ${this.token}`,
+            'Content-Type': 'application/json',
+            'Accept': 'application/vnd.github.v3+json'
+          },
+          body: JSON.stringify({
+            message: `Remove assessment ${assessmentId} from index`,
+            content: updatedContent,
+            sha: indexData.sha,
+            committer: {
+              name: 'AI Maturity Scan Bot',
+              email: 'ai-scan@eraneos.com'
+            }
+          })
+        });
+      }
+    } catch (error) {
+      console.error('Failed to update index after deletion:', error);
+    }
+  }
+
+  // Generate bulk export data
+  async generateBulkExport(selectedAssessments, format = 'csv') {
+    const exportData = [];
+    
+    for (const assessment of selectedAssessments) {
+      try {
+        const result = await this.getAssessment(assessment.filePath);
+        if (result.success) {
+          exportData.push(result.data);
+        }
+      } catch (error) {
+        console.error(`Failed to load assessment ${assessment.id}:`, error);
+      }
+    }
+
     if (format === 'csv') {
-      const headers = ['ID', 'Organisation', 'Contact', 'Date', 'Overall Score', 'Maturity Level'];
-      const rows = assessments.map(assessment => [
-        assessment.id,
-        assessment.organisation || '',
-        assessment.contact || '',
-        assessment.date,
-        assessment.overallScore,
-        assessment.maturityLevel
-      ]);
-      return [headers, ...rows].map(row => row.map(cell => `"${cell}"`).join(',')).join('\n');
-    } else {
-      return JSON.stringify(assessments, null, 2);
+      return this.generateBulkCSV(exportData);
+    } else if (format === 'json') {
+      return JSON.stringify(exportData, null, 2);
     }
+    
+    return exportData;
   }
 
-  isAvailable() {
-    return !!this.token;
+  // Generate bulk CSV export
+  generateBulkCSV(assessments) {
+    const rows = [];
+    
+    // Header row
+    rows.push([
+      'Assessment ID',
+      'Organisation',
+      'Contact',
+      'Date',
+      'Overall Score',
+      'Maturity Level',
+      'Governance Score',
+      'Data Score',
+      'People Score',
+      'Process Score',
+      'Technology Score',
+      'Ethics Score',
+      'Timestamp'
+    ]);
+
+    // Data rows
+    assessments.forEach(assessment => {
+      const categoryScores = {};
+      assessment.scores.categories.forEach(cat => {
+        categoryScores[cat.id] = cat.score;
+      });
+
+      rows.push([
+        assessment.id,
+        assessment.metadata.organisation || 'Anonymous',
+        assessment.metadata.contact || '',
+        assessment.metadata.date,
+        assessment.scores.overall,
+        assessment.maturity.name,
+        categoryScores.governance || '',
+        categoryScores.data || '',
+        categoryScores.people || '',
+        categoryScores.process || '',
+        categoryScores.technology || '',
+        categoryScores.ethics || '',
+        assessment.timestamp
+      ]);
+    });
+
+    return rows.map(row => row.map(cell => `"${cell}"`).join(',')).join('\n');
   }
 }
 
-export default GitHubServiceRobust;
-
+export default GitHubService;
