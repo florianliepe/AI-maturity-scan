@@ -1,0 +1,71 @@
+{
+  "id": "1758193526468",
+  "metadata": {
+    "organisation": "Hirsch AG ",
+    "contact": "florian.liepe@eraneos.com",
+    "date": "2025-09-18"
+  },
+  "answers": {
+    "g1": 2,
+    "g2": 4,
+    "g3": 2,
+    "d1": 4,
+    "d2": 1,
+    "d3": 2,
+    "p1": 2,
+    "p2": 4,
+    "p3": 5,
+    "pr1": 3,
+    "pr2": 2,
+    "pr3": 3,
+    "t1": 3,
+    "t2": 4,
+    "t3": 2,
+    "e1": 2,
+    "e2": 4,
+    "e3": 2
+  },
+  "scores": {
+    "categories": [
+      {
+        "id": "governance",
+        "title": "Governance & Strategy",
+        "score": 2.67
+      },
+      {
+        "id": "data",
+        "title": "Data & Integration",
+        "score": 2.33
+      },
+      {
+        "id": "people",
+        "title": "People & Skills",
+        "score": 3.67
+      },
+      {
+        "id": "process",
+        "title": "Processes & Use-cases",
+        "score": 2.67
+      },
+      {
+        "id": "technology",
+        "title": "Technology & Tools",
+        "score": 3
+      },
+      {
+        "id": "ethics",
+        "title": "Ethics, Compliance & Privacy",
+        "score": 2.67
+      }
+    ],
+    "overall": 2.83
+  },
+  "maturity": {
+    "level": 3,
+    "name": "Defined",
+    "color": "#eab308",
+    "description": "Documented processes and clear governance"
+  },
+  "timestamp": "2025-09-18T11:05:26.468Z",
+  "version": "2.0"
+}
