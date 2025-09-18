@@ -1,4 +1,4 @@
-name: Deploy AI Maturity Scan - Clean Resolutions
+name: Deploy AI Maturity Scan - Final Fix
 
 on:
   push:
@@ -26,6 +26,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '18'
+          cache: 'npm'
           
       - name: Clean environment
         run: |
@@ -33,9 +34,9 @@ jobs:
           npm cache clean --force
           echo "Environment cleaned successfully"
           
-      - name: Install dependencies with resolutions
+      - name: Install dependencies with overrides
         run: |
-          echo "Installing dependencies with ajv 6.x resolution..."
+          echo "Installing dependencies with ajv 8.x overrides..."
           npm install --legacy-peer-deps --no-audit --no-fund
           echo "Dependencies installed successfully"
           
@@ -48,8 +49,8 @@ jobs:
             echo "✅ ajv/dist/compile/codegen found - compatible structure"
           else
             echo "❌ ajv/dist/compile/codegen not found"
-            ls -la node_modules/ajv/dist/ || echo "ajv dist structure:"
-            ls -la node_modules/ajv/dist/compile/ || echo "ajv compile structure:"
+            ls -la node_modules/ajv/dist/ 2>/dev/null || echo "ajv dist structure not found"
+            ls -la node_modules/ajv/dist/compile/ 2>/dev/null || echo "ajv compile structure not found"
           fi
           
       - name: Build application
