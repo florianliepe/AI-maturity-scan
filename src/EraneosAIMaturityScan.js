@@ -395,7 +395,7 @@ Assessment ID: ${assessmentData.id}
 
   const handleAdminPasswordSubmit = (e) => {
     e.preventDefault();
-    const correctPassword = process.env.REACT_APP_ADMIN_PASSWORD || 'eraneos2024';
+    const correctPassword = import.meta.env.VITE_ADMIN_PASSWORD || 'eraneos2024';
     
     if (adminPassword === correctPassword) {
       setIsAdminAuthenticated(true);
@@ -1508,3 +1508,4 @@ Assessment ID: ${assessmentData.id}
     </div>
   );
 }
+
