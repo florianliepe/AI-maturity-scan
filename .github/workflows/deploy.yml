@@ -1,4 +1,4 @@
-name: Deploy AI Maturity Scan - Final Fix
+name: Deploy AI Maturity Scan - Bulletproof Build
 
 on:
   push:
@@ -26,32 +26,32 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '18'
-          cache: 'npm'
+          # Remove cache to avoid lock file issues
           
-      - name: Clean environment
+      - name: Clean environment completely
         run: |
-          rm -rf node_modules package-lock.json || true
+          echo "Cleaning all dependency artifacts..."
+          rm -rf node_modules package-lock.json yarn.lock pnpm-lock.yaml || true
           npm cache clean --force
           echo "Environment cleaned successfully"
           
-      - name: Install dependencies with overrides
+      - name: Install dependencies fresh
         run: |
-          echo "Installing dependencies with ajv 8.x overrides..."
-          npm install --legacy-peer-deps --no-audit --no-fund
+          echo "Installing dependencies from scratch..."
+          npm install --no-package-lock --legacy-peer-deps --no-audit --no-fund
           echo "Dependencies installed successfully"
           
-      - name: Verify ajv resolution
+      - name: Verify installation
         run: |
-          echo "Checking resolved ajv version..."
-          npm list ajv || echo "ajv version check complete"
-          echo "Verifying ajv file structure..."
-          if [ -f "node_modules/ajv/dist/compile/codegen/index.js" ]; then
-            echo "✅ ajv/dist/compile/codegen found - compatible structure"
+          echo "Verifying React Scripts installation..."
+          if [ -f "node_modules/.bin/react-scripts" ]; then
+            echo "✅ react-scripts found"
           else
-            echo "❌ ajv/dist/compile/codegen not found"
-            ls -la node_modules/ajv/dist/ 2>/dev/null || echo "ajv dist structure not found"
-            ls -la node_modules/ajv/dist/compile/ 2>/dev/null || echo "ajv compile structure not found"
+            echo "❌ react-scripts not found"
+            exit 1
           fi
+          echo "Node modules structure:"
+          ls -la node_modules/ | head -20
           
       - name: Build application
         run: |
@@ -74,6 +74,8 @@ jobs:
             ls -la build/
             echo "Build size:"
             du -sh build/
+            echo "Static files:"
+            find build -name "*.js" -o -name "*.css" -o -name "*.html" | head -10
           else
             echo "❌ Build directory not found"
             exit 1
