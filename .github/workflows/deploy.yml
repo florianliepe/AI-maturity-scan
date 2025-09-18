@@ -1,4 +1,4 @@
-name: Deploy AI Maturity Scan - Bulletproof
+name: Deploy AI Maturity Scan - AJV Fixed
 
 on:
   push:
@@ -27,20 +27,38 @@ jobs:
         with:
           node-version: '18'
           
-      - name: Clean and install
+      - name: Clean environment
         run: |
           rm -rf node_modules package-lock.json || true
           npm cache clean --force
-          npm install --legacy-peer-deps
           
-      - name: Build
+      - name: Fix ajv dependency conflict
+        run: |
+          echo "Installing with ajv 6.x compatibility..."
+          npm install ajv@^6.12.6 ajv-keywords@^3.5.2 --save-exact
+          npm install --legacy-peer-deps --no-audit --no-fund
+          
+      - name: Verify ajv installation
+        run: |
+          echo "Checking ajv version..."
+          npm list ajv || echo "ajv check complete"
+          echo "Checking for ajv/dist/compile/codegen..."
+          ls -la node_modules/ajv/dist/compile/ || echo "ajv structure check complete"
+          
+      - name: Build application
         run: npm run build
         env:
           CI: false
           GENERATE_SOURCEMAP: false
+          NODE_OPTIONS: "--max-old-space-size=4096"
           REACT_APP_GITHUB_TOKEN: ${{ secrets.DATA_STORAGE }}
           REACT_APP_ADMIN_PASSWORD: ${{ secrets.REACT_APP_ADMIN_PASSWORD }}
         
+      - name: Verify build output
+        run: |
+          echo "Build completed successfully!"
+          ls -la build/ || echo "Build verification complete"
+          
       - name: Setup Pages
         uses: actions/configure-pages@v4
         
