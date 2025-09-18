@@ -11,7 +11,8 @@
     "react-scripts": "5.0.1",
     "web-vitals": "^2.1.4",
     "chart.js": "^4.4.0",
-    "react-chartjs-2": "^5.2.0"
+    "react-chartjs-2": "^5.2.0",
+    "ajv": "^6.12.6"
   },
   "scripts": {
     "start": "react-scripts start",
@@ -36,5 +37,13 @@
       "last 1 firefox version",
       "last 1 safari version"
     ]
+  },
+  "overrides": {
+    "ajv": "^6.12.6",
+    "ajv-keywords": "^3.5.2"
+  },
+  "resolutions": {
+    "ajv": "^6.12.6",
+    "ajv-keywords": "^3.5.2"
   }
 }
