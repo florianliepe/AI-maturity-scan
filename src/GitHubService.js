@@ -1,10 +1,9 @@
 // Enhanced GitHub Service with Delete Functionality - Version 2.2
 class GitHubServiceRobust {
   constructor() {
-    this.owner = 'florianliepe';
-    this.repo = 'AI-maturity-scan';
-    this.baseUrl = 'https://api.github.com';
-    this.token = process.env.REACT_APP_GITHUB_TOKEN || process.env.REACT_APP_DATA_STORAGE || process.env.DATA_STORAGE;
+    this.owner = import.meta.env.VITE_GITHUB_OWNER || 'florianliepe';
+    this.repo = import.meta.env.VITE_GITHUB_REPO || 'AI-maturity-scan';
+    this.token = import.meta.env.VITE_GITHUB_TOKEN || null;
     this.maxRetries = 3;
     this.retryDelay = 1000;
     this.enableLogging = true;
@@ -471,3 +470,4 @@ class GitHubServiceRobust {
 }
 
 export default GitHubServiceRobust;
+
