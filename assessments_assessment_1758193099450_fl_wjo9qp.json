@@ -1,0 +1,71 @@
+{
+  "id": "1758193099447",
+  "metadata": {
+    "organisation": "FL",
+    "contact": "florian.liepe@eraneos.com",
+    "date": "2025-09-18"
+  },
+  "answers": {
+    "g1": 3,
+    "g2": 3,
+    "g3": 3,
+    "d1": 5,
+    "d2": 3,
+    "d3": 3,
+    "p1": 3,
+    "p2": 3,
+    "p3": 3,
+    "pr1": 2,
+    "pr2": 2,
+    "pr3": 1,
+    "t1": 3,
+    "t2": 3,
+    "t3": 3,
+    "e1": 5,
+    "e2": 5,
+    "e3": 3
+  },
+  "scores": {
+    "categories": [
+      {
+        "id": "governance",
+        "title": "Governance & Strategy",
+        "score": 3
+      },
+      {
+        "id": "data",
+        "title": "Data & Integration",
+        "score": 3.67
+      },
+      {
+        "id": "people",
+        "title": "People & Skills",
+        "score": 3
+      },
+      {
+        "id": "process",
+        "title": "Processes & Use-cases",
+        "score": 1.67
+      },
+      {
+        "id": "technology",
+        "title": "Technology & Tools",
+        "score": 3
+      },
+      {
+        "id": "ethics",
+        "title": "Ethics, Compliance & Privacy",
+        "score": 4.33
+      }
+    ],
+    "overall": 3.11
+  },
+  "maturity": {
+    "level": 3,
+    "name": "Defined",
+    "color": "#eab308",
+    "description": "Documented processes and clear governance"
+  },
+  "timestamp": "2025-09-18T10:58:19.447Z",
+  "version": "2.0"
+}
