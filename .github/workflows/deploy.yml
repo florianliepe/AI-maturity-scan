@@ -28,7 +28,6 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '18'
-          # REMOVED: cache: 'npm' - this was causing the lock file requirement
           
       - name: Clear npm cache
         run: npm cache clean --force
