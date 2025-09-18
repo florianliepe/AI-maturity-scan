@@ -12,7 +12,7 @@ import {
   BarElement,
 } from 'chart.js';
 import { Radar, Bar } from 'react-chartjs-2';
-import GitHubService from './GitHubServiceRobust';
+import GitHubService from './GitHubServiceRobust-Enhanced';
 
 ChartJS.register(
   RadialLinearScale,
@@ -134,6 +134,14 @@ export default function EraneosAIMaturityScan() {
   const [showAdminLogin, setShowAdminLogin] = useState(false);
   const [adminPassword, setAdminPassword] = useState('');
   const [adminLoginError, setAdminLoginError] = useState('');
+  
+  // Delete functionality state
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState(null); // { type: 'single' | 'bulk', data: assessment | assessmentIds }
+  const [deletePassword, setDeletePassword] = useState('');
+  const [deletePasswordError, setDeletePasswordError] = useState('');
+  const [deleteInProgress, setDeleteInProgress] = useState(false);
+  const [deleteResults, setDeleteResults] = useState(null);
   
   // Initialize GitHub service with enhanced error handling
   const githubService = useMemo(() => new GitHubService(), []);
@@ -305,6 +313,96 @@ export default function EraneosAIMaturityScan() {
       alert('Export failed. Please try again.');
     } finally {
       setLoading(false);
+    }
+  };
+
+  // NEW: Handle individual assessment deletion
+  const handleDeleteAssessment = (assessment) => {
+    setDeleteTarget({
+      type: 'single',
+      data: assessment
+    });
+    setShowDeleteConfirm(true);
+    setDeletePassword('');
+    setDeletePasswordError('');
+  };
+
+  // NEW: Handle bulk assessment deletion
+  const handleBulkDelete = () => {
+    if (selectedAssessments.length === 0) {
+      alert('Please select assessments to delete');
+      return;
+    }
+
+    const selectedData = allAssessments.filter(a => selectedAssessments.includes(a.id));
+    setDeleteTarget({
+      type: 'bulk',
+      data: selectedData
+    });
+    setShowDeleteConfirm(true);
+    setDeletePassword('');
+    setDeletePasswordError('');
+  };
+
+  // NEW: Confirm and execute deletion
+  const confirmDelete = async () => {
+    const correctPassword = process.env.REACT_APP_ADMIN_PASSWORD || 'eraneos2024';
+    
+    if (deletePassword !== correctPassword) {
+      setDeletePasswordError('Incorrect password. Please try again.');
+      return;
+    }
+
+    setDeleteInProgress(true);
+    setDeletePasswordError('');
+
+    try {
+      let result;
+      
+      if (deleteTarget.type === 'single') {
+        // Single assessment deletion
+        const assessment = deleteTarget.data;
+        result = await githubService.deleteAssessment(assessment.id, assessment.filePath);
+        
+        if (result.success) {
+          // Remove from local state
+          setAllAssessments(prev => prev.filter(a => a.id !== assessment.id));
+          setSelectedAssessments(prev => prev.filter(id => id !== assessment.id));
+        }
+      } else {
+        // Bulk deletion
+        const assessmentIds = deleteTarget.data.map(a => a.id);
+        result = await githubService.deleteMultipleAssessments(assessmentIds, deleteTarget.data);
+        
+        if (result.success || result.successCount > 0) {
+          // Remove successfully deleted assessments from local state
+          const successfullyDeleted = result.results
+            .filter(r => r.success)
+            .map(r => r.assessmentId);
+          
+          setAllAssessments(prev => prev.filter(a => !successfullyDeleted.includes(a.id)));
+          setSelectedAssessments(prev => prev.filter(id => !successfullyDeleted.includes(id)));
+        }
+      }
+
+      setDeleteResults(result);
+      setShowDeleteConfirm(false);
+      
+      // Show success/error message
+      if (result.success) {
+        console.log('Deletion completed successfully:', result.message);
+      } else {
+        console.error('Deletion completed with errors:', result.message);
+      }
+
+    } catch (error) {
+      console.error('Deletion failed:', error);
+      setDeleteResults({
+        success: false,
+        message: `Deletion failed: ${error.message}`
+      });
+    } finally {
+      setDeleteInProgress(false);
     }
   };
 
@@ -627,53 +725,4 @@ export default function EraneosAIMaturityScan() {
             <div className="flex items-center gap-3 mb-6">
               <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
                 <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-                </svg>
-              </div>
-              <div>
-                <h3 className="text-xl font-semibold text-gray-900">Admin Access</h3>
-                <p className="text-sm text-gray-500">Enter your credentials to continue</p>
-              </div>
-            </div>
-            
-            <form onSubmit={handleAdminPasswordSubmit} className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Password
-                </label>
-                <div className="relative">
-                  <input
-                    type="password"
-                    value={adminPassword}
-                    onChange={(e) => setAdminPassword(e.target.value)}
-                    className="w-full p-3 pl-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-                    placeholder="Enter admin password"
-                    autoFocus
-                  />
-                  <svg className="w-5 h-5 text-gray-400 absolute left-3 top-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                  </svg>
-                </div>
-              </div>
-              
-              {adminLoginError && (
-                <div className="p-4 bg-red-50 border border-red-200 rounded-lg flex items-start gap-3">
-                  <svg className="w-5 h-5 text-red-500 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                  <p className="text-sm text-red-600">{adminLoginError}</p>
-                </div>
-              )}
-              
-              <div className="flex gap-3 justify-end pt-4">
-                <button
-                  type="button"
-                  onClick={() => setShowAdminLogin(false)}
-                  className="px-6 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors font-medium"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-
