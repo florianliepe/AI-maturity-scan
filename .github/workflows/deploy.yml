@@ -59,22 +59,3 @@ jobs:
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
-```
-
-**Key Changes:**
-- Changed `npm ci` to `npm install --legacy-peer-deps`
-- Added `npm cache clean --force`
-- Updated to use `DATA_STORAGE` secret instead of `GITHUB_TOKEN`
-
-#### **Step 2: Fix GitHub Service Configuration**
-
-**2.1 Update GitHubServiceRobust.js**
-
-Replace the token configuration in `GitHubServiceRobust.js`:
-
-```javascript
-// Find this line (around line 8):
-this.token = process.env.REACT_APP_GITHUB_TOKEN || process.env.GITHUB_TOKEN;
-
-// Replace with:
-this.token = process.env.REACT_APP_GITHUB_TOKEN || process.env.REACT_APP_DATA_STORAGE || process.env.DATA_STORAGE;
