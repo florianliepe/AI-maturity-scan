@@ -1,4 +1,4 @@
-name: Deploy AI Maturity Scan with GitHub Integration
+name: Deploy AI Maturity Scan - Bulletproof
 
 on:
   push:
@@ -21,74 +21,25 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
         
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '18'
-          # No cache to avoid lock file issues
           
-      - name: Clear npm cache and reset
+      - name: Clean and install
         run: |
-          npm cache clean --force
           rm -rf node_modules package-lock.json || true
-
-      - name: Configure npm for reliability
-        run: |
-          npm config set fetch-retry-mintimeout 20000
-          npm config set fetch-retry-maxtimeout 120000
-          npm config set fetch-retries 5
-          npm config set registry https://registry.npmjs.org/
-          npm config set legacy-peer-deps true
-
-      - name: Install dependencies with dependency fixes
-        run: |
-          # Install with specific flags to handle dependency conflicts
-          npm install --no-audit --no-fund --legacy-peer-deps --force || \
-          (echo "First attempt failed, trying with different approach..." && \
-           npm cache clean --force && \
-           npm install --no-audit --no-fund --legacy-peer-deps) || \
-          (echo "Second attempt failed, trying with npm ci fallback..." && \
-           npm install --no-audit --no-fund --force)
-        
-      - name: Fix dependency conflicts manually
-        run: |
-          # Install specific versions to resolve conflicts
-          npm install ajv@^8.12.0 --save-dev --legacy-peer-deps || true
-          npm install @types/eslint@^8.44.0 --save-dev --legacy-peer-deps || true
-          npm install nth-check@^2.0.1 --save-dev --legacy-peer-deps || true
-        
-      - name: Verify installations
-        run: |
-          echo "Checking installed packages..."
-          npm list --depth=0 || true
-          echo "Verifying Chart.js installation..."
-          npm list chart.js react-chartjs-2 || echo "Chart.js verification complete"
-          echo "Checking for ajv..."
-          npm list ajv || echo "ajv check complete"
+          npm cache clean --force
+          npm install --legacy-peer-deps
           
-      - name: Build application with GitHub token
-        run: |
-          # Set additional environment variables for build stability
-          export NODE_OPTIONS="--max-old-space-size=4096"
-          export GENERATE_SOURCEMAP=false
-          export CI=false
-          npm run build
+      - name: Build
+        run: npm run build
         env:
           CI: false
           GENERATE_SOURCEMAP: false
-          NODE_OPTIONS: "--max-old-space-size=4096"
           REACT_APP_GITHUB_TOKEN: ${{ secrets.DATA_STORAGE }}
           REACT_APP_ADMIN_PASSWORD: ${{ secrets.REACT_APP_ADMIN_PASSWORD }}
-        
-      - name: Verify build output
-        run: |
-          echo "Build directory contents:"
-          ls -la build/ || echo "Build directory check complete"
-          echo "Build size:"
-          du -sh build/ || echo "Build size check complete"
         
       - name: Setup Pages
         uses: actions/configure-pages@v4
