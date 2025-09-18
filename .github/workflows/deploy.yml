@@ -1,4 +1,4 @@
-name: Deploy AI Maturity Scan - Bulletproof Build
+name: Deploy AI Maturity Scan - Vite Build
 
 on:
   push:
@@ -26,44 +26,41 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '18'
-          # Remove cache to avoid lock file issues
+          cache: 'npm'
           
-      - name: Clean environment completely
+      - name: Clean environment
         run: |
-          echo "Cleaning all dependency artifacts..."
-          rm -rf node_modules package-lock.json yarn.lock pnpm-lock.yaml || true
+          echo "Cleaning dependency artifacts..."
+          rm -rf node_modules package-lock.json || true
           npm cache clean --force
           echo "Environment cleaned successfully"
           
-      - name: Install dependencies fresh
+      - name: Install dependencies
         run: |
-          echo "Installing dependencies from scratch..."
-          npm install --no-package-lock --legacy-peer-deps --no-audit --no-fund
+          echo "Installing Vite and dependencies..."
+          npm install
           echo "Dependencies installed successfully"
           
-      - name: Verify installation
+      - name: Verify Vite installation
         run: |
-          echo "Verifying React Scripts installation..."
-          if [ -f "node_modules/.bin/react-scripts" ]; then
-            echo "✅ react-scripts found"
+          echo "Verifying Vite installation..."
+          if [ -f "node_modules/.bin/vite" ]; then
+            echo "✅ Vite found"
+            npx vite --version
           else
-            echo "❌ react-scripts not found"
+            echo "❌ Vite not found"
             exit 1
           fi
-          echo "Node modules structure:"
-          ls -la node_modules/ | head -20
           
-      - name: Build application
+      - name: Build application with Vite
         run: |
-          echo "Starting React build..."
+          echo "Starting Vite build..."
           npm run build
-          echo "Build completed successfully!"
+          echo "Vite build completed successfully!"
         env:
-          CI: false
-          GENERATE_SOURCEMAP: false
-          NODE_OPTIONS: "--max-old-space-size=4096"
-          REACT_APP_GITHUB_TOKEN: ${{ secrets.DATA_STORAGE }}
-          REACT_APP_ADMIN_PASSWORD: ${{ secrets.REACT_APP_ADMIN_PASSWORD }}
+          NODE_ENV: production
+          VITE_GITHUB_TOKEN: ${{ secrets.DATA_STORAGE }}
+          VITE_ADMIN_PASSWORD: ${{ secrets.REACT_APP_ADMIN_PASSWORD }}
         
       - name: Verify build output
         run: |
