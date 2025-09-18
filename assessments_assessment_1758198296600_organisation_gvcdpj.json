@@ -1,0 +1,71 @@
+{
+  "id": "1758198296596",
+  "metadata": {
+    "organisation": "Organisation",
+    "contact": "Test",
+    "date": "2025-09-18"
+  },
+  "answers": {
+    "g1": 5,
+    "g2": 4,
+    "g3": 3,
+    "d1": 3,
+    "d2": 3,
+    "d3": 3,
+    "p1": 5,
+    "p2": 5,
+    "p3": 5,
+    "pr1": 3,
+    "pr2": 3,
+    "pr3": 3,
+    "t1": 2,
+    "t2": 5,
+    "t3": 1,
+    "e1": 3,
+    "e2": 2,
+    "e3": 1
+  },
+  "scores": {
+    "categories": [
+      {
+        "id": "governance",
+        "title": "Governance & Strategy",
+        "score": 4
+      },
+      {
+        "id": "data",
+        "title": "Data & Integration",
+        "score": 3
+      },
+      {
+        "id": "people",
+        "title": "People & Skills",
+        "score": 5
+      },
+      {
+        "id": "process",
+        "title": "Processes & Use-cases",
+        "score": 3
+      },
+      {
+        "id": "technology",
+        "title": "Technology & Tools",
+        "score": 2.67
+      },
+      {
+        "id": "ethics",
+        "title": "Ethics, Compliance & Privacy",
+        "score": 2
+      }
+    ],
+    "overall": 3.28
+  },
+  "maturity": {
+    "level": 3,
+    "name": "Defined",
+    "color": "#eab308",
+    "description": "Documented processes and clear governance"
+  },
+  "timestamp": "2025-09-18T12:24:56.596Z",
+  "version": "2.0"
+}
