@@ -1,7 +1,7 @@
 // Enhanced GitHub Service with Bulletproof Error Handling and Multiple Fallback Strategies
 class GitHubServiceRobust {
   constructor() {
-    this.owner = 'florianliepe';
+    this.owner = 'florianliep';
     this.repo = 'AI-maturity-scan';
     this.baseUrl = 'https://api.github.com';
     this.token = process.env.REACT_APP_GITHUB_TOKEN || process.env.GITHUB_TOKEN;
@@ -547,4 +547,3 @@ class GitHubServiceRobust {
 }
 
 export default GitHubServiceRobust;
-
