@@ -1,5 +1,15 @@
 [
   {
+    "id": "1758193099447",
+    "timestamp": "2025-09-18T10:58:19.447Z",
+    "organisation": "FL",
+    "contact": "florian.liepe@eraneos.com",
+    "date": "2025-09-18",
+    "overallScore": 3.11,
+    "maturityLevel": "Defined",
+    "filePath": "assessments_assessment_1758193099450_fl_wjo9qp.json"
+  },
+  {
     "id": "1758128223307",
     "timestamp": "2025-09-17T16:57:03.307Z",
     "organisation": "ELS",
