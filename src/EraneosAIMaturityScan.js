@@ -428,7 +428,7 @@ Assessment ID: ${assessmentData.id}
   const handleDeleteAssessment = (assessment) => {
     if (window.confirm(`Delete assessment for ${assessment.organisation}?`)) {
       const password = prompt('Enter admin password:');
-      if (password === (process.env.REACT_APP_ADMIN_PASSWORD || 'eraneos2024')) {
+      if (password === (import.meta.env.VITE_ADMIN_PASSWORD || 'eraneos2024')) {
         deleteAssessment(assessment);
       } else {
         alert('Incorrect password');
@@ -1508,4 +1508,3 @@ Assessment ID: ${assessmentData.id}
     </div>
   );
 }
-
