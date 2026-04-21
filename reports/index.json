@@ -1,5 +1,15 @@
 [
   {
+    "id": "1776775702310",
+    "timestamp": "2026-04-21T12:48:22.310Z",
+    "organisation": "test case",
+    "contact": "florian.liepe@eraneos.com",
+    "date": "2026-04-21",
+    "overallScore": 2.96,
+    "maturityLevel": "AI Empowered",
+    "filePath": "reports/2026/04/assessment-1776775702310-test case.json"
+  },
+  {
     "id": "1776254339820",
     "timestamp": "2026-04-15T11:58:59.820Z",
     "organisation": "Eraneos",
