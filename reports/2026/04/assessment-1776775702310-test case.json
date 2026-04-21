@@ -1,0 +1,79 @@
+{
+  "id": "1776775702310",
+  "metadata": {
+    "organisation": "test case",
+    "contact": "florian.liepe@eraneos.com",
+    "date": "2026-04-21"
+  },
+  "answers": {
+    "s_vision": 2,
+    "s_operative": 2,
+    "s_kunden": 1,
+    "s_ressourcen": 2,
+    "s_nutzen": 1,
+    "k_offenheit": 2,
+    "k_akzeptanz": 2,
+    "k_fehler": 4,
+    "k_transformation": 4,
+    "k_leadership": 3,
+    "k_kommunikation": 5,
+    "p_transparenz": 5,
+    "p_optimierung": 4,
+    "p_design": 4,
+    "p_skalierbarkeit": 2,
+    "g_formell": 3,
+    "g_ethik": 3,
+    "g_risiko": 3,
+    "g_sicherheit": 4,
+    "t_kompetenz": 4,
+    "t_motivation": 2,
+    "t_leadership": 3,
+    "t_coaching": 3
+  },
+  "scores": {
+    "categories": [
+      {
+        "id": "strategie",
+        "title": "Strategie",
+        "score": 1.6,
+        "total": 8
+      },
+      {
+        "id": "kultur",
+        "title": "Kultur und Führung",
+        "score": 3.33,
+        "total": 20
+      },
+      {
+        "id": "prozesse",
+        "title": "Prozesse",
+        "score": 3.75,
+        "total": 15
+      },
+      {
+        "id": "governance",
+        "title": "Governance",
+        "score": 3.25,
+        "total": 13
+      },
+      {
+        "id": "talent",
+        "title": "Talent",
+        "score": 3,
+        "total": 12
+      }
+    ],
+    "overall": 2.96,
+    "total": 68,
+    "percentage": 59,
+    "max": 115
+  },
+  "maturity": {
+    "level": 3,
+    "name": "AI Empowered",
+    "color": "#eab308",
+    "description": "Punktuelle Nutzung, grundlegende Befähigung und erste Frameworks etabliert."
+  },
+  "timestamp": "2026-04-21T12:48:22.310Z",
+  "version": "3.0"
+}
