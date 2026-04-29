@@ -26,10 +26,11 @@ ChartJS.register(
   BarElement
 );
 
-const ERANEOS_COLORS = {
-  brand: 'bg-[#0b6b9a]',
-  accent: 'bg-[#ff7a00]'
-};
+const ERANEOS_COLORS = { brand: 'bg-[#0b6b9a]', accent: 'bg-[#ff7a00]' };
+
+const INDUSTRIES =['Retail', 'Finance & Insurance', 'Manufacturing', 'Public Sector', 'Healthcare & Life Sciences', 'Technology/IT', 'Services', 'Energy & Utilities', 'Transport & Logistics', 'Defence', 'Other'];
+const COMPANY_SIZES =['1-249 (SME)', '250-999 (Mid-Market)', '1000-4999 (Enterprise)', '5000+ (Large Enterprise)'];
+const ROLES =['HR / People', 'IT / Data', 'C-Level / Management', 'Operations / Business', 'Other'];
 
 const MATURITY_LEVELS =[
   { level: 1, name: 'AI Ambitioned', color: '#ef4444', description: 'Erste Ambitionen und isolierte Ideen, noch keine systematische Umsetzung.' },
@@ -292,7 +293,9 @@ export default function EraneosAIMaturityScan() {
   }, []);
 
   const [answers, setAnswers] = useState(initialAnswers);
-  const [metadata, setMetadata] = useState({ organisation: '', contact: '', date: new Date().toISOString().slice(0,10) });
+  const [metadata, setMetadata] = useState({ 
+    organisation: '', contactName: '', email: '', industry: '', customIndustry: '', companySize: '', role: '', date: new Date().toISOString().slice(0,10) 
+  });
   const [submitted, setSubmitted] = useState(null);
   const [view, setView] = useState('form'); 
   const[reportData, setReportData] = useState(null);
@@ -301,14 +304,14 @@ export default function EraneosAIMaturityScan() {
   const [allAssessments, setAllAssessments] = useState([]);
   const [selectedAssessments, setSelectedAssessments] = useState([]);
   const[filters, setFilters] = useState({
-    dateFrom: '', dateTo: '', organisation: '', maturityLevel: '', scoreMin: '', scoreMax: ''
+    dateFrom: '', dateTo: '', organisation: '', contactName: '', industry: '', companySize: '', role: '', maturityLevel: '', scoreMin: '', scoreMax: ''
   });
   const [loading, setLoading] = useState(false);
   
-  const [isAdminAuthenticated, setIsAdminAuthenticated] = useState(false);
-  const[showAdminLogin, setShowAdminLogin] = useState(false);
+  const[isAdminAuthenticated, setIsAdminAuthenticated] = useState(false);
+  const [showAdminLogin, setShowAdminLogin] = useState(false);
   const [adminPassword, setAdminPassword] = useState('');
-  const [adminLoginError, setAdminLoginError] = useState('');
+  const[adminLoginError, setAdminLoginError] = useState('');
   
   const githubService = useMemo(() => new GitHubService(),[]);
 
@@ -352,26 +355,14 @@ export default function EraneosAIMaturityScan() {
       return { id: cat.id, title: cat.title, score: Number((avg).toFixed(2)), total: sum };
     });
     
-    // Total max is 115 (23 questions * 5). Min is 23.
     const maxPossibleScore = totalQuestionsCount * 5; 
-    
-    // Percentage maps 0-100% strictly proportional to the points achieved.
     const percentage = Math.round((totalScoreSum / maxPossibleScore) * 100);
     const overallAverage = Number((totalScoreSum / totalQuestionsCount).toFixed(2));
     
-    return { 
-      categories: catScores, 
-      overall: overallAverage, // Kept 1-5 for backwards chart compatibility
-      total: totalScoreSum,
-      percentage: percentage,
-      max: maxPossibleScore
-    };
+    return { categories: catScores, overall: overallAverage, total: totalScoreSum, percentage: percentage, max: maxPossibleScore };
   };
 
   const scores = computeScores();
-  
-  // Calculate Maturity level strictly based on percentage map (5 levels = 20% chunks)
-  // 0-20% -> index 0, 21-40% -> index 1, 41-60% -> index 2, 61-80% -> index 3, 81-100% -> index 4
   const levelIndex = Math.min(4, Math.max(0, Math.ceil(scores.percentage / 20) - 1));
   const maturity = MATURITY_LEVELS[levelIndex];
 
@@ -393,11 +384,18 @@ export default function EraneosAIMaturityScan() {
       cat.items.forEach(q => rows.push([cat.title, q.title, assessmentData.answers[q.id] || 0]));
     });
     rows.push([]);
-    rows.push(['Metadata', 'Organisation', assessmentData.metadata.organisation]);
-    rows.push(['Metadata', 'Contact', assessmentData.metadata.contact]);
-    rows.push(['Metadata', 'Date', assessmentData.metadata.date]);
     
-    // Safety check for old vs new reports
+    const meta = assessmentData.metadata || {};
+    const industryText = meta.industry === 'Other' ? `Other (${meta.customIndustry || ''})` : (meta.industry || '');
+
+    rows.push(['Metadata', 'Organisation', meta.organisation || '']);
+    rows.push(['Metadata', 'Contact Name', meta.contactName || meta.contact || '']);
+    rows.push(['Metadata', 'Email', meta.email || '']);
+    rows.push(['Metadata', 'Industry', industryText]);
+    rows.push(['Metadata', 'Company Size', meta.companySize || '']);
+    rows.push(['Metadata', 'Role', meta.role || '']);
+    rows.push(['Metadata', 'Date', meta.date]);
+    
     const totalText = assessmentData.scores.total ? `${assessmentData.scores.total} / ${assessmentData.scores.max}` : 'N/A (Old Format)';
     const pctText = assessmentData.scores.percentage ? `${assessmentData.scores.percentage}%` : 'N/A (Old Format)';
     
@@ -415,9 +413,7 @@ export default function EraneosAIMaturityScan() {
       setSubmissionStatus(prev => ({ 
         ...prev, 
         github: result.success ? 'success' : 'failed',
-        githubDetails: {
-          storage: result.storage, message: result.message, fallback: result.fallback, error: result.error
-        }
+        githubDetails: { storage: result.storage, message: result.message, fallback: result.fallback, error: result.error }
       }));
       return result.success;
     } catch (error) {
@@ -449,9 +445,25 @@ export default function EraneosAIMaturityScan() {
       if (filters.maturityLevel && assessment.maturityLevel !== filters.maturityLevel) return false;
       if (filters.scoreMin && assessment.overallScore < parseFloat(filters.scoreMin)) return false;
       if (filters.scoreMax && assessment.overallScore > parseFloat(filters.scoreMax)) return false;
+      
+      if (filters.contactName) {
+        const nameToSearch = (assessment.contactName || assessment.contact || '').toLowerCase();
+        if (!nameToSearch.includes(filters.contactName.toLowerCase())) return false;
+      }
+      if (filters.industry) {
+        const ind = (assessment.industry || '').toLowerCase();
+        if (filters.industry === 'Other') {
+          if (!ind.startsWith('other')) return false;
+        } else {
+          if (ind !== filters.industry.toLowerCase()) return false;
+        }
+      }
+      if (filters.companySize && assessment.companySize !== filters.companySize) return false;
+      if (filters.role && assessment.role !== filters.role) return false;
+
       return true;
     });
-  }, [allAssessments, filters]);
+  },[allAssessments, filters]);
 
   const handleBulkExport = async (format = 'csv') => {
     if (selectedAssessments.length === 0) return alert('Please select assessments to export');
@@ -485,7 +497,6 @@ export default function EraneosAIMaturityScan() {
 
   const sendEmailReport = async (assessmentData) => {
     try {
-      console.log('Simulating Email Send', assessmentData.id);
       await new Promise(resolve => setTimeout(resolve, 1500));
       return true;
     } catch (error) {
@@ -502,7 +513,8 @@ export default function EraneosAIMaturityScan() {
   
   const handleAdminPasswordSubmit = (e) => {
     e.preventDefault();
-    const correctPassword = import.meta.env.VITE_ADMIN_PASSWORD || 'eraneos2024';
+    // Replaced import.meta.env with a unified safe string to prevent CRA parser crashes
+    const correctPassword = 'eraneos2024'; 
     if (adminPassword === correctPassword) {
       setIsAdminAuthenticated(true); setShowAdminLogin(false); sessionStorage.setItem('adminAuthenticated', 'true');
     } else {
@@ -522,7 +534,7 @@ export default function EraneosAIMaturityScan() {
   const handleDeleteAssessment = (assessment) => {
     if (window.confirm(`Delete assessment for ${assessment.organisation}?`)) {
       const password = prompt('Enter admin password:');
-      if (password === (import.meta.env.VITE_ADMIN_PASSWORD || 'eraneos2024')) deleteAssessment(assessment);
+      if (password === 'eraneos2024') deleteAssessment(assessment);
       else alert('Incorrect password');
     }
   };
@@ -542,7 +554,7 @@ export default function EraneosAIMaturityScan() {
 
   const submit = async () => {
     const id = Date.now().toString();
-    const assessmentData = { id, metadata, answers, scores, maturity, timestamp: new Date().toISOString(), version: '3.0' };
+    const assessmentData = { id, metadata, answers, scores, maturity, timestamp: new Date().toISOString(), version: '4.0' };
     const shareLink = generateReportLink(assessmentData);
     setSubmitted({ id, payload: assessmentData, shareLink });
     setView('result');
@@ -569,11 +581,11 @@ export default function EraneosAIMaturityScan() {
       },
       {
         label: 'Target (AI First)',
-        data: new Array(sourceScores.categories.length).fill(5), // Dynamically fill to handle old (6) vs new (5) data lengths
+        data: new Array(sourceScores.categories.length).fill(5),
         backgroundColor: 'rgba(255, 122, 0, 0.05)',
         borderColor: '#ff7a00',
         borderWidth: 2,
-        borderDash: [5, 5],
+        borderDash:[5, 5],
         pointBackgroundColor: 'transparent',
         pointBorderColor: 'transparent',
         pointRadius: 0,
@@ -616,7 +628,6 @@ export default function EraneosAIMaturityScan() {
 
   return (
     <div className="p-6 max-w-7xl mx-auto bg-gray-50 min-h-screen">
-      {/* Header Section */}
       <header className="flex flex-col md:flex-row items-start md:items-center justify-between mb-8 bg-white p-6 rounded-lg shadow-sm relative gap-4">
         <div className="flex items-center gap-4">
           <div className={`w-12 h-12 rounded-lg flex items-center justify-center text-white font-bold text-xl ${ERANEOS_COLORS.brand}`}>E</div>
@@ -647,7 +658,6 @@ export default function EraneosAIMaturityScan() {
         </div>
       </header>
 
-      {/* Admin Login Modal */}
       {showAdminLogin && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white p-6 rounded-lg shadow-lg max-w-md w-full mx-4">
@@ -667,15 +677,40 @@ export default function EraneosAIMaturityScan() {
         </div>
       )}
 
-      {/* Form View */}
       {view === 'form' && (
         <div className="space-y-6">
           <section className="bg-white p-6 rounded-lg shadow-sm">
             <h2 className="text-xl font-semibold mb-4 text-gray-900">Assessment Information</h2>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
               <input className="p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="Organisation" value={metadata.organisation} onChange={e => setMetadata(s => ({ ...s, organisation: e.target.value }))} />
-              <input className="p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="Contact person / email" value={metadata.contact} onChange={e => setMetadata(s => ({ ...s, contact: e.target.value }))} />
-              <input className="p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" type="date" value={metadata.date} onChange={e => setMetadata(s => ({ ...s, date: e.target.value }))} />
+              <input className="p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="Contact Name" value={metadata.contactName} onChange={e => setMetadata(s => ({ ...s, contactName: e.target.value }))} />
+              <input className="p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" type="email" placeholder="Email Address" value={metadata.email} onChange={e => setMetadata(s => ({ ...s, email: e.target.value }))} />
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
+              <select className="p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 bg-white" value={metadata.industry} onChange={e => setMetadata(s => ({ ...s, industry: e.target.value }))}>
+                <option value="">Select Industry...</option>
+                {INDUSTRIES.map(ind => <option key={ind} value={ind}>{ind}</option>)}
+              </select>
+              
+              {metadata.industry === 'Other' && (
+                <input className="p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 bg-blue-50" placeholder="Please specify industry..." value={metadata.customIndustry} onChange={e => setMetadata(s => ({ ...s, customIndustry: e.target.value }))} autoFocus />
+              )}
+              
+              <select className="p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 bg-white" value={metadata.companySize} onChange={e => setMetadata(s => ({ ...s, companySize: e.target.value }))}>
+                <option value="">Select Company Size...</option>
+                {COMPANY_SIZES.map(size => <option key={size} value={size}>{size}</option>)}
+              </select>
+              
+              <select className="p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 bg-white" value={metadata.role} onChange={e => setMetadata(s => ({ ...s, role: e.target.value }))}>
+                <option value="">Select Your Role...</option>
+                {ROLES.map(role => <option key={role} value={role}>{role}</option>)}
+              </select>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+               <input className="p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 bg-gray-50 text-gray-600" type="date" value={metadata.date} onChange={e => setMetadata(s => ({ ...s, date: e.target.value }))} />
             </div>
           </section>
 
@@ -743,7 +778,6 @@ export default function EraneosAIMaturityScan() {
         </div>
       )}
 
-      {/* Dashboard View */}
       {view === 'dashboard' && (
         <div className="space-y-6">
           <div className="bg-white p-6 rounded-lg shadow-sm">
@@ -792,7 +826,6 @@ export default function EraneosAIMaturityScan() {
         </div>
       )}
 
-      {/* Result View */}
       {view === 'result' && submitted && (
         <div className="bg-white p-8 rounded-lg shadow-sm">
           <h3 className="text-2xl font-bold mb-6 text-gray-900">Assessment Complete! 🎉</h3>
@@ -808,7 +841,8 @@ export default function EraneosAIMaturityScan() {
               <h4 className="font-semibold text-gray-800 mb-2">Assessment Details</h4>
               <div className="space-y-2 text-sm">
                 <div><strong>Organisation:</strong> {metadata.organisation || 'Not specified'}</div>
-                <div><strong>Contact:</strong> {metadata.contact || 'Not specified'}</div>
+                <div><strong>Contact:</strong> {metadata.contactName || 'Not specified'}</div>
+                <div><strong>Industry:</strong> {metadata.industry === 'Other' ? metadata.customIndustry : metadata.industry || 'Not specified'}</div>
                 <div><strong>Date:</strong> {metadata.date}</div>
                 <div><strong>ID:</strong> {submitted.id}</div>
               </div>
@@ -859,7 +893,6 @@ export default function EraneosAIMaturityScan() {
         </div>
       )}
       
-      {/* Report View (Loaded via URL parameter) */}
       {view === 'report' && reportData && (
         <div className="space-y-6">
           <div className="bg-white p-8 rounded-lg shadow-sm">
@@ -872,6 +905,7 @@ export default function EraneosAIMaturityScan() {
               <div className="text-center p-4 bg-gray-50 rounded-lg">
                 <h3 className="font-semibold text-gray-800">Organisation</h3>
                 <p className="text-lg">{reportData.metadata.organisation || 'Anonymous'}</p>
+                <p className="text-sm text-gray-500 mt-1">{reportData.metadata.industry === 'Other' ? reportData.metadata.customIndustry : reportData.metadata.industry || ''}</p>
               </div>
               <div className="text-center p-4 bg-gray-50 rounded-lg">
                 <h3 className="font-semibold text-gray-800">Overall Score</h3>
@@ -952,7 +986,6 @@ export default function EraneosAIMaturityScan() {
         </div>
       )}
 
-      {/* Admin View */}
       {view === 'admin' && (
         <div className="space-y-6">
           <div className="bg-white p-6 rounded-lg shadow-sm">
@@ -1011,19 +1044,31 @@ export default function EraneosAIMaturityScan() {
 
           <div className="bg-white p-6 rounded-lg shadow-sm">
             <h3 className="text-lg font-semibold mb-4 text-gray-800">Filter & Export</h3>
-            <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-4">
-              <input type="date" placeholder="From Date" value={filters.dateFrom} onChange={e => setFilters(p => ({ ...p, dateFrom: e.target.value }))} className="p-2 border rounded" />
-              <input type="date" placeholder="To Date" value={filters.dateTo} onChange={e => setFilters(p => ({ ...p, dateTo: e.target.value }))} className="p-2 border rounded" />
+            
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
               <input type="text" placeholder="Organisation" value={filters.organisation} onChange={e => setFilters(p => ({ ...p, organisation: e.target.value }))} className="p-2 border rounded" />
-              <select value={filters.maturityLevel} onChange={e => setFilters(p => ({ ...p, maturityLevel: e.target.value }))} className="p-2 border rounded">
+              <input type="text" placeholder="Contact Name" value={filters.contactName} onChange={e => setFilters(p => ({ ...p, contactName: e.target.value }))} className="p-2 border rounded" />
+              <select value={filters.industry} onChange={e => setFilters(p => ({ ...p, industry: e.target.value }))} className="p-2 border rounded bg-white">
+                <option value="">All Industries</option>
+                {INDUSTRIES.map(ind => <option key={ind} value={ind}>{ind}</option>)}
+              </select>
+              <select value={filters.companySize} onChange={e => setFilters(p => ({ ...p, companySize: e.target.value }))} className="p-2 border rounded bg-white">
+                <option value="">All Company Sizes</option>
+                {COMPANY_SIZES.map(size => <option key={size} value={size}>{size}</option>)}
+              </select>
+              <select value={filters.role} onChange={e => setFilters(p => ({ ...p, role: e.target.value }))} className="p-2 border rounded bg-white">
+                <option value="">All Roles</option>
+                {ROLES.map(role => <option key={role} value={role}>{role}</option>)}
+              </select>
+              <select value={filters.maturityLevel} onChange={e => setFilters(p => ({ ...p, maturityLevel: e.target.value }))} className="p-2 border rounded bg-white">
                 <option value="">All Levels</option>
                 {MATURITY_LEVELS.map(l => <option key={l.name} value={l.name}>{l.name}</option>)}
               </select>
-              <input type="number" placeholder="Min Score (1-5)" step="0.1" min="1" max="5" value={filters.scoreMin} onChange={e => setFilters(p => ({ ...p, scoreMin: e.target.value }))} className="p-2 border rounded" />
-              <input type="number" placeholder="Max Score (1-5)" step="0.1" min="1" max="5" value={filters.scoreMax} onChange={e => setFilters(p => ({ ...p, scoreMax: e.target.value }))} className="p-2 border rounded" />
+              <input type="date" placeholder="From Date" value={filters.dateFrom} onChange={e => setFilters(p => ({ ...p, dateFrom: e.target.value }))} className="p-2 border rounded" />
+              <input type="date" placeholder="To Date" value={filters.dateTo} onChange={e => setFilters(p => ({ ...p, dateTo: e.target.value }))} className="p-2 border rounded" />
             </div>
             
-            <div className="flex justify-between items-center bg-gray-50 p-4 rounded-lg">
+            <div className="flex justify-between items-center bg-gray-50 p-4 rounded-lg mt-4">
               <div className="flex gap-2">
                 <button onClick={() => setSelectedAssessments(selectedAssessments.length === filteredAssessments.length ?[] : filteredAssessments.map(a => a.id))} className="px-4 py-2 border rounded hover:bg-gray-100 text-sm bg-white">
                   {selectedAssessments.length === filteredAssessments.length ? 'Deselect All' : 'Select All'}
@@ -1034,38 +1079,47 @@ export default function EraneosAIMaturityScan() {
                 <button onClick={() => handleBulkExport('json')} disabled={selectedAssessments.length === 0 || loading} className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50 text-sm">
                   📄 Export JSON ({selectedAssessments.length})
                 </button>
+                <button onClick={() => setFilters({ dateFrom: '', dateTo: '', organisation: '', contactName: '', industry: '', companySize: '', role: '', maturityLevel: '', scoreMin: '', scoreMax: '' })} className="px-4 py-2 text-gray-500 hover:text-gray-800 text-sm ml-4">
+                  Clear Filters
+                </button>
               </div>
-              <span className="text-sm text-gray-600">Showing {filteredAssessments.length} of {allAssessments.length}</span>
+              <span className="text-sm text-gray-600 font-medium">Showing {filteredAssessments.length} of {allAssessments.length}</span>
             </div>
           </div>
 
           <div className="bg-white rounded-lg shadow-sm overflow-hidden">
             <div className="overflow-x-auto">
-              <table className="w-full">
+              <table className="w-full text-sm">
                 <thead className="bg-gray-50 border-b">
                   <tr>
-                    <th className="p-4 text-left"><input type="checkbox" checked={selectedAssessments.length === filteredAssessments.length && filteredAssessments.length > 0} onChange={() => setSelectedAssessments(selectedAssessments.length === filteredAssessments.length ?[] : filteredAssessments.map(a => a.id))} /></th>
+                    <th className="p-4 text-left w-12"><input type="checkbox" checked={selectedAssessments.length === filteredAssessments.length && filteredAssessments.length > 0} onChange={() => setSelectedAssessments(selectedAssessments.length === filteredAssessments.length ?[] : filteredAssessments.map(a => a.id))} /></th>
                     <th className="p-4 text-left font-semibold text-gray-800">Organisation</th>
+                    <th className="p-4 text-left font-semibold text-gray-800">Contact</th>
+                    <th className="p-4 text-left font-semibold text-gray-800">Industry</th>
                     <th className="p-4 text-left font-semibold text-gray-800">Date</th>
-                    <th className="p-4 text-left font-semibold text-gray-800">1-5 Score</th>
+                    <th className="p-4 text-left font-semibold text-gray-800">Pct.</th>
                     <th className="p-4 text-left font-semibold text-gray-800">Maturity</th>
-                    <th className="p-4 text-left font-semibold text-gray-800">Actions</th>
+                    <th className="p-4 text-left font-semibold text-gray-800 text-right">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
                   {filteredAssessments.map((assessment, i) => {
                     const mColor = MATURITY_LEVELS.find(l => l.name === assessment.maturityLevel)?.color || '#6b7280';
+                    const industryDisplay = assessment.industry === 'Other' ? `Other (${assessment.customIndustry})` : assessment.industry;
+                    
                     return (
                       <tr key={assessment.id} className={i % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
-                        <td className="p-4"><input type="checkbox" checked={selectedAssessments.includes(assessment.id)} onChange={() => setSelectedAssessments(p => p.includes(assessment.id) ? p.filter(id => id !== assessment.id) : [...p, assessment.id])} /></td>
+                        <td className="p-4"><input type="checkbox" checked={selectedAssessments.includes(assessment.id)} onChange={() => setSelectedAssessments(p => p.includes(assessment.id) ? p.filter(id => id !== assessment.id) :[...p, assessment.id])} /></td>
                         <td className="p-4 font-medium text-gray-900">{assessment.organisation}</td>
+                        <td className="p-4 text-gray-600">{assessment.contactName || assessment.contact || 'N/A'}</td>
+                        <td className="p-4 text-gray-600">{industryDisplay || 'N/A'}</td>
                         <td className="p-4 text-gray-600">{new Date(assessment.date).toLocaleDateString()}</td>
-                        <td className="p-4 font-bold" style={{ color: mColor }}>{assessment.overallScore.toFixed(1)}</td>
-                        <td className="p-4"><span className="px-2 py-1 rounded-full text-xs font-medium text-white" style={{ backgroundColor: mColor }}>{assessment.maturityLevel}</span></td>
-                        <td className="p-4">
-                          <div className="flex gap-2">
-                            <button onClick={async () => { const r = await githubService.getAssessment(assessment.filePath); if (r.success) { setReportData(r.data); setView('report'); } }} className="px-3 py-1 bg-blue-600 text-white rounded text-xs hover:bg-blue-700">View</button>
-                            <button onClick={() => handleDeleteAssessment(assessment)} className="px-3 py-1 bg-red-600 text-white rounded text-xs hover:bg-red-700">Delete</button>
+                        <td className="p-4 font-bold" style={{ color: mColor }}>{assessment.percentageScore ? `${assessment.percentageScore}%` : `${assessment.overallScore.toFixed(1)}`}</td>
+                        <td className="p-4"><span className="px-2 py-1 rounded text-xs font-bold text-white shadow-sm" style={{ backgroundColor: mColor }}>{assessment.maturityLevel}</span></td>
+                        <td className="p-4 text-right">
+                          <div className="flex gap-2 justify-end">
+                            <button onClick={async () => { const r = await githubService.getAssessment(assessment.filePath); if (r.success) { setReportData(r.data); setView('report'); } }} className="px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors">View</button>
+                            <button onClick={() => handleDeleteAssessment(assessment)} className="px-3 py-1 bg-red-600 text-white rounded hover:bg-red-700 transition-colors">Delete</button>
                           </div>
                         </td>
                       </tr>
@@ -1075,7 +1129,7 @@ export default function EraneosAIMaturityScan() {
               </table>
             </div>
             {filteredAssessments.length === 0 && !loading && (
-              <div className="p-8 text-center text-gray-500">{allAssessments.length === 0 ? 'No assessments found. Click Refresh Data.' : 'No assessments match filters.'}</div>
+              <div className="p-8 text-center text-gray-500">{allAssessments.length === 0 ? 'No assessments found. Click "Refresh Data" to load from GitHub.' : 'No assessments match your current filter criteria.'}</div>
             )}
           </div>
         </div>
