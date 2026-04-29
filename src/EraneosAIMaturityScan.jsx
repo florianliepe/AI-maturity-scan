@@ -293,25 +293,28 @@ export default function EraneosAIMaturityScan() {
   }, []);
 
   const [answers, setAnswers] = useState(initialAnswers);
-  const [metadata, setMetadata] = useState({ 
-    organisation: '', contactName: '', email: '', industry: '', customIndustry: '', companySize: '', role: '', date: new Date().toISOString().slice(0,10) 
+  const[metadata, setMetadata] = useState({ 
+    organisation: '', contactName: '', email: '', industry: '', customIndustry: '', companySize: '', role: '', date: new Date().toISOString().slice(0, 10) 
   });
   const [submitted, setSubmitted] = useState(null);
-  const [view, setView] = useState('form'); 
+  
+  // Set default view to landing page
+  const [view, setView] = useState('landing'); 
+  
   const[reportData, setReportData] = useState(null);
   const [submissionStatus, setSubmissionStatus] = useState({ github: false, email: false });
   
   const [allAssessments, setAllAssessments] = useState([]);
-  const [selectedAssessments, setSelectedAssessments] = useState([]);
-  const[filters, setFilters] = useState({
+  const[selectedAssessments, setSelectedAssessments] = useState([]);
+  const [filters, setFilters] = useState({
     dateFrom: '', dateTo: '', organisation: '', contactName: '', industry: '', companySize: '', role: '', maturityLevel: '', scoreMin: '', scoreMax: ''
   });
   const [loading, setLoading] = useState(false);
   
-  const[isAdminAuthenticated, setIsAdminAuthenticated] = useState(false);
-  const [showAdminLogin, setShowAdminLogin] = useState(false);
+  const [isAdminAuthenticated, setIsAdminAuthenticated] = useState(false);
+  const[showAdminLogin, setShowAdminLogin] = useState(false);
   const [adminPassword, setAdminPassword] = useState('');
-  const[adminLoginError, setAdminLoginError] = useState('');
+  const [adminLoginError, setAdminLoginError] = useState('');
   
   const githubService = useMemo(() => new GitHubService(),[]);
 
@@ -475,7 +478,7 @@ export default function EraneosAIMaturityScan() {
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `eraneos-bulk-export-${new Date().toISOString().slice(0,10)}.${format}`;
+      a.download = `eraneos-bulk-export-${new Date().toISOString().slice(0, 10)}.${format}`;
       a.click();
       URL.revokeObjectURL(url);
     } finally {
@@ -513,7 +516,6 @@ export default function EraneosAIMaturityScan() {
   
   const handleAdminPasswordSubmit = (e) => {
     e.preventDefault();
-    // Replaced import.meta.env with a unified safe string to prevent CRA parser crashes
     const correctPassword = 'eraneos2024'; 
     if (adminPassword === correctPassword) {
       setIsAdminAuthenticated(true); setShowAdminLogin(false); sessionStorage.setItem('adminAuthenticated', 'true');
@@ -523,7 +525,7 @@ export default function EraneosAIMaturityScan() {
   };
   
   const handleAdminLogout = () => {
-    setIsAdminAuthenticated(false); sessionStorage.removeItem('adminAuthenticated'); if (view === 'admin') setView('form');
+    setIsAdminAuthenticated(false); sessionStorage.removeItem('adminAuthenticated'); if (view === 'admin') setView('landing');
   };
 
   useEffect(() => {
@@ -626,14 +628,104 @@ export default function EraneosAIMaturityScan() {
     plugins: { legend: { display: false } },
   };
 
+  // --- RENDERING LOGIC ---
+
+  // Admin Modal (Rendered globally if active)
+  const adminModal = showAdminLogin && (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+      <div className="bg-white p-6 rounded-lg shadow-lg max-w-md w-full mx-4">
+        <h3 className="text-lg font-semibold mb-4 text-gray-900">Admin Login</h3>
+        <form onSubmit={handleAdminPasswordSubmit}>
+          <div className="mb-4">
+            <label className="block text-sm font-medium text-gray-700 mb-2">Password</label>
+            <input type="password" value={adminPassword} onChange={(e) => setAdminPassword(e.target.value)} className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500" autoFocus />
+          </div>
+          {adminLoginError && <div className="mb-4 p-3 bg-red-50 text-red-600 border border-red-200 rounded-lg text-sm">{adminLoginError}</div>}
+          <div className="flex gap-3 justify-end">
+            <button type="button" onClick={() => setShowAdminLogin(false)} className="px-4 py-2 border rounded-lg hover:bg-gray-50">Cancel</button>
+            <button type="submit" className="px-4 py-2 bg-black text-white rounded-lg hover:bg-gray-800">Login</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+
+  // 1. Landing Page View (Eraneos Brand Style)
+  if (view === 'landing') {
+    return (
+      <div className="min-h-screen bg-white font-sans flex flex-col selection:bg-orange-100 text-gray-900">
+        {adminModal}
+        
+        {/* Navigation Bar */}
+        <nav className="w-full flex items-center justify-between py-6 px-8 max-w-7xl mx-auto">
+          {/* Logo Approximation */}
+          <div className="text-4xl font-extrabold tracking-tighter cursor-pointer" onClick={() => setView('landing')}>
+            eraneos
+          </div>
+          
+          {/* Nav Links / Admin */}
+          <div className="flex items-center gap-8">
+            <div className="hidden md:flex gap-6 text-sm font-semibold">
+              <span className="cursor-pointer hover:text-[#ff7a00] transition-colors">Expertise</span>
+              <span className="cursor-pointer hover:text-[#ff7a00] transition-colors">Our offering</span>
+              <span className="cursor-pointer hover:text-[#ff7a00] transition-colors">Customer stories</span>
+            </div>
+            
+            <div className="flex items-center gap-4">
+              {!isAdminAuthenticated ? (
+                <button onClick={handleAdminLogin} className="text-xs text-gray-400 hover:text-black font-medium uppercase tracking-wider">Admin</button>
+              ) : (
+                <div className="flex items-center gap-3">
+                  <button onClick={() => setView('admin')} className="text-sm font-bold text-[#ff7a00] hover:underline">Dashboard</button>
+                  <button onClick={handleAdminLogout} className="text-xs text-gray-400 hover:text-black uppercase tracking-wider">Logout</button>
+                </div>
+              )}
+            </div>
+          </div>
+        </nav>
+
+        {/* Hero Section */}
+        <main className="flex-grow flex flex-col items-start justify-center px-8 py-20 max-w-7xl mx-auto w-full">
+          <div className="max-w-4xl">
+            <h1 className="text-5xl md:text-7xl font-bold tracking-tight mb-8 leading-[1.1]">
+              Embedding AI where it matters most.
+            </h1>
+            
+            <p className="text-xl md:text-2xl text-gray-600 mb-12 leading-relaxed max-w-3xl">
+              Generative AI is reshaping business models across industries. Move from siloed experimentation to a fully embedded AI capability. Evaluate your organization's AI maturity across Strategy, Culture, Processes, Governance, and Talent to ensure your investment delivers measurable, sustainable value.
+            </p>
+            
+            <button 
+              onClick={() => setView('form')}
+              className="bg-[#ff7a00] text-white px-10 py-4 rounded-full text-lg font-bold hover:bg-[#e66e00] transition-transform hover:scale-105 shadow-md flex items-center gap-3"
+            >
+              Start Readiness Assessment 
+              <span className="text-xl">→</span>
+            </button>
+          </div>
+        </main>
+        
+        {/* Footer Area */}
+        <footer className="w-full border-t border-gray-100 py-8 px-8 text-sm text-gray-500 flex justify-between max-w-7xl mx-auto">
+          <div>© {new Date().getFullYear()} Eraneos Group. All rights reserved.</div>
+          <div>Transforming potential into performance.</div>
+        </footer>
+      </div>
+    );
+  }
+
+  // 2. Application Wrapper (For Form, Dashboard, Report, Result, Admin)
   return (
-    <div className="p-6 max-w-7xl mx-auto bg-gray-50 min-h-screen">
+    <div className="p-4 md:p-6 max-w-7xl mx-auto bg-gray-50 min-h-screen font-sans">
+      {adminModal}
+
+      {/* App Header */}
       <header className="flex flex-col md:flex-row items-start md:items-center justify-between mb-8 bg-white p-6 rounded-lg shadow-sm relative gap-4">
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-4 cursor-pointer" onClick={() => setView('landing')}>
           <div className={`w-12 h-12 rounded-lg flex items-center justify-center text-white font-bold text-xl ${ERANEOS_COLORS.brand}`}>E</div>
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">Eraneos — AI Readiness & Maturity Scan</h1>
-            <p className="text-gray-600">Comprehensive AI Framework Assessment (1-5 Scale)</p>
+            <h1 className="text-2xl md:text-3xl font-bold text-gray-900 tracking-tight">Eraneos AI Readiness Scan</h1>
+            <p className="text-sm md:text-base text-gray-600">Comprehensive AI Framework Assessment</p>
           </div>
         </div>
         
@@ -658,59 +750,41 @@ export default function EraneosAIMaturityScan() {
         </div>
       </header>
 
-      {showAdminLogin && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white p-6 rounded-lg shadow-lg max-w-md w-full mx-4">
-            <h3 className="text-lg font-semibold mb-4 text-gray-900">Admin Login</h3>
-            <form onSubmit={handleAdminPasswordSubmit}>
-              <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 mb-2">Password</label>
-                <input type="password" value={adminPassword} onChange={(e) => setAdminPassword(e.target.value)} className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500" autoFocus />
-              </div>
-              {adminLoginError && <div className="mb-4 p-3 bg-red-50 text-red-600 border border-red-200 rounded-lg text-sm">{adminLoginError}</div>}
-              <div className="flex gap-3 justify-end">
-                <button type="button" onClick={() => setShowAdminLogin(false)} className="px-4 py-2 border rounded-lg hover:bg-gray-50">Cancel</button>
-                <button type="submit" className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">Login</button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
+      {/* Form View */}
       {view === 'form' && (
         <div className="space-y-6">
-          <section className="bg-white p-6 rounded-lg shadow-sm">
-            <h2 className="text-xl font-semibold mb-4 text-gray-900">Assessment Information</h2>
+          <section className="bg-white p-6 rounded-lg shadow-sm border border-gray-100">
+            <h2 className="text-xl font-semibold mb-6 text-gray-900">Assessment Information</h2>
             
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-              <input className="p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="Organisation" value={metadata.organisation} onChange={e => setMetadata(s => ({ ...s, organisation: e.target.value }))} />
-              <input className="p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="Contact Name" value={metadata.contactName} onChange={e => setMetadata(s => ({ ...s, contactName: e.target.value }))} />
-              <input className="p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" type="email" placeholder="Email Address" value={metadata.email} onChange={e => setMetadata(s => ({ ...s, email: e.target.value }))} />
+              <input className="p-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none" placeholder="Organisation" value={metadata.organisation} onChange={e => setMetadata(s => ({ ...s, organisation: e.target.value }))} />
+              <input className="p-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none" placeholder="Contact Name" value={metadata.contactName} onChange={e => setMetadata(s => ({ ...s, contactName: e.target.value }))} />
+              <input className="p-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none" type="email" placeholder="Email Address" value={metadata.email} onChange={e => setMetadata(s => ({ ...s, email: e.target.value }))} />
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
-              <select className="p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 bg-white" value={metadata.industry} onChange={e => setMetadata(s => ({ ...s, industry: e.target.value }))}>
+              <select className="p-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-white" value={metadata.industry} onChange={e => setMetadata(s => ({ ...s, industry: e.target.value }))}>
                 <option value="">Select Industry...</option>
                 {INDUSTRIES.map(ind => <option key={ind} value={ind}>{ind}</option>)}
               </select>
               
               {metadata.industry === 'Other' && (
-                <input className="p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 bg-blue-50" placeholder="Please specify industry..." value={metadata.customIndustry} onChange={e => setMetadata(s => ({ ...s, customIndustry: e.target.value }))} autoFocus />
+                <input className="p-3 border border-blue-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-blue-50" placeholder="Please specify industry..." value={metadata.customIndustry} onChange={e => setMetadata(s => ({ ...s, customIndustry: e.target.value }))} autoFocus />
               )}
               
-              <select className="p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 bg-white" value={metadata.companySize} onChange={e => setMetadata(s => ({ ...s, companySize: e.target.value }))}>
+              <select className="p-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-white" value={metadata.companySize} onChange={e => setMetadata(s => ({ ...s, companySize: e.target.value }))}>
                 <option value="">Select Company Size...</option>
                 {COMPANY_SIZES.map(size => <option key={size} value={size}>{size}</option>)}
               </select>
               
-              <select className="p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 bg-white" value={metadata.role} onChange={e => setMetadata(s => ({ ...s, role: e.target.value }))}>
+              <select className="p-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-white" value={metadata.role} onChange={e => setMetadata(s => ({ ...s, role: e.target.value }))}>
                 <option value="">Select Your Role...</option>
                 {ROLES.map(role => <option key={role} value={role}>{role}</option>)}
               </select>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-               <input className="p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 bg-gray-50 text-gray-600" type="date" value={metadata.date} onChange={e => setMetadata(s => ({ ...s, date: e.target.value }))} />
+               <input className="p-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-gray-50 text-gray-600" type="date" value={metadata.date} onChange={e => setMetadata(s => ({ ...s, date: e.target.value }))} />
             </div>
           </section>
 
@@ -718,7 +792,7 @@ export default function EraneosAIMaturityScan() {
             <div key={cat.id} className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden mb-8">
               <div className="bg-gray-50 border-b border-gray-200 p-6 flex justify-between items-center">
                  <div>
-                   <h3 className="text-2xl font-bold text-gray-900">{cat.title}</h3>
+                   <h3 className="text-2xl font-bold text-gray-900 tracking-tight">{cat.title}</h3>
                    <p className="text-gray-600 mt-1">{cat.description}</p>
                  </div>
                  <div className="text-right">
@@ -745,9 +819,9 @@ export default function EraneosAIMaturityScan() {
                                isSelected ? 'bg-blue-50 border-blue-500 shadow-md transform scale-[1.02]' : 'bg-white border-gray-200 hover:border-blue-300 hover:bg-gray-50'
                              }`}
                            >
-                             <div className="flex items-center justify-between mb-2">
-                               <span className={`inline-flex items-center justify-center w-6 h-6 rounded-full text-xs font-bold ${isSelected ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-600'}`}>{v}</span>
-                               <span className="text-xs font-bold text-gray-500">{levelInfo.name}</span>
+                             <div className="flex items-center justify-between mb-3">
+                               <span className={`inline-flex items-center justify-center w-7 h-7 rounded-full text-xs font-bold ${isSelected ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-600'}`}>{v}</span>
+                               <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">{levelInfo.name}</span>
                              </div>
                              <p className="text-sm text-gray-700 leading-relaxed flex-grow">{q[`desc${v}`]}</p>
                            </div>
@@ -769,49 +843,50 @@ export default function EraneosAIMaturityScan() {
             </div>
           ))}
 
-          <div className="flex gap-4 justify-center bg-white p-6 rounded-lg shadow-sm">
-            <button onClick={exportToCSV} className="px-6 py-3 rounded-lg border hover:bg-gray-50 transition-colors font-medium">📊 Export CSV</button>
-            <button onClick={() => setView('dashboard')} className="px-6 py-3 rounded-lg text-white font-medium hover:opacity-90 bg-[#ff7a00]">📈 View Dashboard</button>
-            {isAdminAuthenticated && <button onClick={() => setView('admin')} className="px-6 py-3 rounded-lg border border-purple-300 text-purple-700 hover:bg-purple-50 transition-colors font-medium">🔧 Admin Analytics</button>}
-            <button onClick={submit} className="px-6 py-3 rounded-lg text-white font-medium hover:opacity-90 bg-[#0b6b9a]">🚀 Submit & Generate Report</button>
+          <div className="flex flex-wrap gap-4 justify-center bg-white p-6 rounded-lg shadow-sm border border-gray-100">
+            <button onClick={exportToCSV} className="px-6 py-3 rounded-full border border-gray-300 hover:bg-gray-50 transition-colors font-medium">📊 Export CSV</button>
+            <button onClick={() => setView('dashboard')} className="px-6 py-3 rounded-full text-white font-medium hover:opacity-90 bg-gray-900 shadow-md">📈 View Dashboard</button>
+            {isAdminAuthenticated && <button onClick={() => setView('admin')} className="px-6 py-3 rounded-full border border-purple-300 text-purple-700 hover:bg-purple-50 transition-colors font-medium">🔧 Admin Analytics</button>}
+            <button onClick={submit} className="px-6 py-3 rounded-full text-white font-bold hover:bg-[#e66e00] transition-colors bg-[#ff7a00] shadow-md">🚀 Submit & Generate Report</button>
           </div>
         </div>
       )}
 
+      {/* Dashboard View */}
       {view === 'dashboard' && (
         <div className="space-y-6">
-          <div className="bg-white p-6 rounded-lg shadow-sm">
-            <h2 className="text-2xl font-bold mb-6 text-gray-900">AI Maturity Dashboard</h2>
+          <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-100">
+            <h2 className="text-2xl font-bold mb-6 text-gray-900 tracking-tight">AI Maturity Dashboard</h2>
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-              <div className="bg-gray-50 p-6 rounded-lg">
+              <div className="bg-gray-50 p-6 rounded-lg border border-gray-100">
                 <h4 className="text-lg font-semibold mb-4 text-gray-800">Maturity Radar Chart</h4>
                 <div className="h-80"><Radar data={getRadarData(scores)} options={radarOptions} /></div>
               </div>
-              <div className="bg-gray-50 p-6 rounded-lg">
+              <div className="bg-gray-50 p-6 rounded-lg border border-gray-100">
                 <h4 className="text-lg font-semibold mb-4 text-gray-800">Category Averages (1-5)</h4>
                 <div className="h-80"><Bar data={getBarData(scores)} options={barOptions} /></div>
               </div>
             </div>
           </div>
           
-          <div className="bg-white p-6 rounded-lg shadow-sm">
-            <h3 className="text-xl font-semibold mb-4 text-gray-900">Detailed Dimension Score Analysis</h3>
+          <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-100">
+            <h3 className="text-xl font-semibold mb-6 text-gray-900 tracking-tight">Detailed Dimension Score Analysis</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {scores.categories.map(cat => {
                 const level = Math.max(0, Math.min(4, Math.round(cat.score) - 1));
                 const maturityInfo = MATURITY_LEVELS[level];
                 return (
-                  <div key={cat.id} className="p-4 border rounded-lg bg-gray-50">
+                  <div key={cat.id} className="p-5 border border-gray-200 rounded-lg bg-gray-50">
                     <h4 className="font-semibold text-gray-800">{cat.title}</h4>
-                    <div className="mt-2">
-                      <div className="flex justify-between items-center mb-1">
+                    <div className="mt-3">
+                      <div className="flex justify-between items-center mb-2">
                         <span className="text-sm text-gray-600">Points: {cat.total} | Avg:</span>
-                        <span className="font-bold" style={{ color: maturityInfo.color }}>{cat.score.toFixed(1)}/5.0</span>
+                        <span className="font-bold text-lg" style={{ color: maturityInfo.color }}>{cat.score.toFixed(1)}/5.0</span>
                       </div>
-                      <div className="w-full bg-gray-200 rounded-full h-2">
-                        <div className="h-2 rounded-full transition-all" style={{ width: `${(cat.score / 5) * 100}%`, backgroundColor: maturityInfo.color }}></div>
+                      <div className="w-full bg-gray-200 rounded-full h-2.5">
+                        <div className="h-2.5 rounded-full transition-all" style={{ width: `${(cat.score / 5) * 100}%`, backgroundColor: maturityInfo.color }}></div>
                       </div>
-                      <div className="text-xs text-gray-500 mt-1">{maturityInfo.name}</div>
+                      <div className="text-xs text-gray-500 mt-2 uppercase tracking-wider font-semibold">{maturityInfo.name}</div>
                     </div>
                   </div>
                 );
@@ -819,142 +894,144 @@ export default function EraneosAIMaturityScan() {
             </div>
           </div>
 
-          <div className="flex gap-4 justify-center bg-white p-6 rounded-lg shadow-sm">
-            <button onClick={() => setView('form')} className="px-6 py-3 rounded-lg border hover:bg-gray-50 transition-colors font-medium">← Back</button>
-            <button onClick={exportToCSV} className="px-6 py-3 rounded-lg border hover:bg-gray-50 transition-colors font-medium">📊 Export Data</button>
+          <div className="flex gap-4 justify-center bg-white p-6 rounded-lg shadow-sm border border-gray-100">
+            <button onClick={() => setView('form')} className="px-6 py-3 rounded-full border border-gray-300 hover:bg-gray-50 transition-colors font-medium">← Back to Assessment</button>
+            <button onClick={exportToCSV} className="px-6 py-3 rounded-full bg-gray-900 text-white hover:bg-gray-800 transition-colors font-medium">📊 Export Data</button>
           </div>
         </div>
       )}
 
+      {/* Result View */}
       {view === 'result' && submitted && (
-        <div className="bg-white p-8 rounded-lg shadow-sm">
-          <h3 className="text-2xl font-bold mb-6 text-gray-900">Assessment Complete! 🎉</h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-            <div className="p-6 bg-gray-50 rounded-lg border-l-4" style={{ borderColor: maturity.color }}>
+        <div className="bg-white p-8 rounded-lg shadow-sm border border-gray-100">
+          <h3 className="text-3xl font-bold mb-8 text-gray-900 tracking-tight">Assessment Complete! 🎉</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+            <div className="p-8 bg-gray-50 rounded-lg border-l-4" style={{ borderColor: maturity.color }}>
               <h4 className="font-semibold text-gray-800 mb-2">Overall Results</h4>
-              <div className="text-4xl font-bold mb-1" style={{ color: maturity.color }}>{scores.percentage}%</div>
-              <div className="text-lg font-medium text-gray-700 mb-2">{maturity.name} Level</div>
+              <div className="text-5xl font-extrabold mb-2" style={{ color: maturity.color }}>{scores.percentage}%</div>
+              <div className="text-xl font-bold text-gray-800 mb-2">{maturity.name} Level</div>
               <div className="text-sm font-semibold text-gray-600">Score: {scores.total} / {scores.max} points</div>
-              <div className="text-sm text-gray-500 mt-2 italic">{maturity.description}</div>
+              <div className="text-sm text-gray-600 mt-3 leading-relaxed">{maturity.description}</div>
             </div>
-            <div className="p-6 bg-gray-50 rounded-lg">
-              <h4 className="font-semibold text-gray-800 mb-2">Assessment Details</h4>
-              <div className="space-y-2 text-sm">
-                <div><strong>Organisation:</strong> {metadata.organisation || 'Not specified'}</div>
-                <div><strong>Contact:</strong> {metadata.contactName || 'Not specified'}</div>
-                <div><strong>Industry:</strong> {metadata.industry === 'Other' ? metadata.customIndustry : metadata.industry || 'Not specified'}</div>
-                <div><strong>Date:</strong> {metadata.date}</div>
-                <div><strong>ID:</strong> {submitted.id}</div>
+            <div className="p-8 bg-gray-50 rounded-lg border border-gray-100">
+              <h4 className="font-semibold text-gray-800 mb-4">Assessment Details</h4>
+              <div className="space-y-3 text-sm text-gray-600">
+                <div className="flex justify-between border-b border-gray-200 pb-2"><strong className="text-gray-800">Organisation:</strong> <span>{metadata.organisation || 'Not specified'}</span></div>
+                <div className="flex justify-between border-b border-gray-200 pb-2"><strong className="text-gray-800">Contact:</strong> <span>{metadata.contactName || 'Not specified'}</span></div>
+                <div className="flex justify-between border-b border-gray-200 pb-2"><strong className="text-gray-800">Industry:</strong> <span>{metadata.industry === 'Other' ? metadata.customIndustry : metadata.industry || 'Not specified'}</span></div>
+                <div className="flex justify-between border-b border-gray-200 pb-2"><strong className="text-gray-800">Date:</strong> <span>{metadata.date}</span></div>
+                <div className="flex justify-between"><strong className="text-gray-800">ID:</strong> <span className="font-mono text-xs">{submitted.id}</span></div>
               </div>
             </div>
           </div>
 
-          <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg mb-6">
-            <h4 className="font-semibold text-blue-800 mb-2">Shareable Report Link</h4>
-            <div className="flex items-center gap-2">
-              <input type="text" value={submitted.shareLink} readOnly className="flex-1 p-2 border border-blue-300 rounded bg-white text-sm" />
-              <button onClick={() => navigator.clipboard.writeText(submitted.shareLink)} className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 text-sm">Copy</button>
+          <div className="p-5 bg-gray-50 border border-gray-200 rounded-lg mb-8">
+            <h4 className="font-semibold text-gray-800 mb-3">Shareable Report Link</h4>
+            <div className="flex items-center gap-3">
+              <input type="text" value={submitted.shareLink} readOnly className="flex-1 p-3 border border-gray-300 rounded-lg bg-white text-sm outline-none" />
+              <button onClick={() => navigator.clipboard.writeText(submitted.shareLink)} className="px-6 py-3 bg-gray-900 text-white font-medium rounded-lg hover:bg-gray-800 transition-colors">Copy</button>
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-            <div className="p-4 bg-gray-50 border rounded-lg">
-              <h4 className="font-semibold text-gray-800 mb-2">📁 Data Storage</h4>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
+            <div className="p-5 bg-gray-50 border border-gray-100 rounded-lg">
+              <h4 className="font-semibold text-gray-800 mb-3">📁 Data Storage</h4>
               <div className="space-y-2">
                 {submissionStatus.github === 'pending' && (
-                  <div className="flex items-center gap-2"><div className="w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div><span className="text-sm text-blue-600">Processing...</span></div>
+                  <div className="flex items-center gap-3"><div className="w-4 h-4 border-2 border-gray-900 border-t-transparent rounded-full animate-spin"></div><span className="text-sm text-gray-700">Processing...</span></div>
                 )}
                 {submissionStatus.github === 'success' && submissionStatus.githubDetails && (
                   <div className="space-y-1">
-                    <div className="flex items-center gap-2"><div className="w-4 h-4 bg-green-500 rounded-full"></div><span className="text-sm text-green-600 font-medium">{submissionStatus.githubDetails.storage === 'github' ? 'GitHub Repository' : 'Local Storage'}</span></div>
-                    <div className="text-xs text-gray-600 ml-6">{submissionStatus.githubDetails.message}</div>
+                    <div className="flex items-center gap-3"><div className="w-4 h-4 bg-green-500 rounded-full"></div><span className="text-sm text-gray-800 font-medium">{submissionStatus.githubDetails.storage === 'github' ? 'GitHub Repository' : 'Local Storage'}</span></div>
+                    <div className="text-xs text-gray-500 ml-7">{submissionStatus.githubDetails.message}</div>
                   </div>
                 )}
                 {submissionStatus.github === 'failed' && (
-                  <div className="flex items-center gap-2"><div className="w-4 h-4 bg-red-500 rounded-full"></div><span className="text-sm text-red-600 font-medium">Storage Failed</span></div>
+                  <div className="flex items-center gap-3"><div className="w-4 h-4 bg-red-500 rounded-full"></div><span className="text-sm text-red-600 font-medium">Storage Failed</span></div>
                 )}
               </div>
             </div>
-            <div className="p-4 bg-gray-50 border rounded-lg">
-              <h4 className="font-semibold text-gray-800 mb-2">📧 Email Report</h4>
-              <div className="flex items-center gap-2">
-                {submissionStatus.email === 'pending' && <><div className="w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div><span className="text-sm text-blue-600">Sending...</span></>}
-                {submissionStatus.email === 'success' && <><div className="w-4 h-4 bg-green-500 rounded-full"></div><span className="text-sm text-green-600">Sent successfully</span></>}
+            <div className="p-5 bg-gray-50 border border-gray-100 rounded-lg">
+              <h4 className="font-semibold text-gray-800 mb-3">📧 Email Report</h4>
+              <div className="flex items-center gap-3">
+                {submissionStatus.email === 'pending' && <><div className="w-4 h-4 border-2 border-gray-900 border-t-transparent rounded-full animate-spin"></div><span className="text-sm text-gray-700">Sending...</span></>}
+                {submissionStatus.email === 'success' && <><div className="w-4 h-4 bg-green-500 rounded-full"></div><span className="text-sm text-gray-800">Sent successfully</span></>}
                 {submissionStatus.email === 'failed' && <><div className="w-4 h-4 bg-red-500 rounded-full"></div><span className="text-sm text-red-600">Sending failed</span></>}
               </div>
             </div>
           </div>
           
-          <div className="flex gap-4 justify-center">
-            <button onClick={exportToCSV} className="px-6 py-3 rounded-lg border hover:bg-gray-50 transition-colors font-medium">📊 Download CSV</button>
-            <button onClick={() => setView('dashboard')} className="px-6 py-3 rounded-lg text-white font-medium bg-[#ff7a00] hover:opacity-90">📈 View Dashboard</button>
-            <button onClick={() => setView('form')} className="px-6 py-3 rounded-lg text-white font-medium bg-[#0b6b9a] hover:opacity-90">🔄 New Assessment</button>
+          <div className="flex flex-wrap gap-4 justify-center">
+            <button onClick={exportToCSV} className="px-8 py-4 rounded-full border border-gray-300 hover:bg-gray-50 transition-colors font-medium">📊 Download CSV</button>
+            <button onClick={() => setView('dashboard')} className="px-8 py-4 rounded-full text-white font-medium bg-[#ff7a00] hover:bg-[#e66e00] shadow-md transition-colors">📈 View Dashboard</button>
+            <button onClick={() => { setAnswers(initialAnswers); setView('form'); }} className="px-8 py-4 rounded-full text-white font-medium bg-gray-900 hover:bg-gray-800 shadow-md transition-colors">🔄 New Assessment</button>
           </div>
         </div>
       )}
       
+      {/* Report View (Loaded via URL parameter) */}
       {view === 'report' && reportData && (
         <div className="space-y-6">
-          <div className="bg-white p-8 rounded-lg shadow-sm">
-            <div className="text-center mb-6">
-              <h2 className="text-3xl font-bold text-gray-900 mb-2">AI Maturity Assessment Report</h2>
-              <p className="text-gray-600">Generated on {new Date(reportData.timestamp).toLocaleDateString()}</p>
+          <div className="bg-white p-8 rounded-lg shadow-sm border border-gray-100">
+            <div className="text-center mb-8">
+              <h2 className="text-3xl font-bold text-gray-900 mb-2 tracking-tight">AI Maturity Assessment Report</h2>
+              <p className="text-gray-500">Generated on {new Date(reportData.timestamp).toLocaleDateString()}</p>
             </div>
             
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-              <div className="text-center p-4 bg-gray-50 rounded-lg">
-                <h3 className="font-semibold text-gray-800">Organisation</h3>
-                <p className="text-lg">{reportData.metadata.organisation || 'Anonymous'}</p>
-                <p className="text-sm text-gray-500 mt-1">{reportData.metadata.industry === 'Other' ? reportData.metadata.customIndustry : reportData.metadata.industry || ''}</p>
+              <div className="text-center p-6 bg-gray-50 rounded-lg border border-gray-100">
+                <h3 className="font-semibold text-gray-500 uppercase tracking-wider text-xs mb-2">Organisation</h3>
+                <p className="text-xl font-bold text-gray-900">{reportData.metadata.organisation || 'Anonymous'}</p>
+                <p className="text-sm text-gray-600 mt-1">{reportData.metadata.industry === 'Other' ? reportData.metadata.customIndustry : reportData.metadata.industry || ''}</p>
               </div>
-              <div className="text-center p-4 bg-gray-50 rounded-lg">
-                <h3 className="font-semibold text-gray-800">Overall Score</h3>
-                <p className="text-3xl font-bold" style={{ color: reportData.maturity.color }}>
+              <div className="text-center p-6 bg-gray-50 rounded-lg border border-gray-100">
+                <h3 className="font-semibold text-gray-500 uppercase tracking-wider text-xs mb-2">Overall Score</h3>
+                <p className="text-4xl font-extrabold" style={{ color: reportData.maturity.color }}>
                   {reportData.scores.percentage ? `${reportData.scores.percentage}%` : `${reportData.scores.overall}/5.0`}
                 </p>
                 {reportData.scores.total && (
-                  <p className="text-sm text-gray-500 mt-1">{reportData.scores.total} / {reportData.scores.max} pts</p>
+                  <p className="text-sm text-gray-500 mt-2 font-medium">{reportData.scores.total} / {reportData.scores.max} pts</p>
                 )}
               </div>
-              <div className="text-center p-4 bg-gray-50 rounded-lg">
-                <h3 className="font-semibold text-gray-800">Maturity Level</h3>
-                <p className="text-lg font-semibold" style={{ color: reportData.maturity.color }}>{reportData.maturity.name}</p>
+              <div className="text-center p-6 bg-gray-50 rounded-lg border border-gray-100">
+                <h3 className="font-semibold text-gray-500 uppercase tracking-wider text-xs mb-2">Maturity Level</h3>
+                <p className="text-xl font-bold" style={{ color: reportData.maturity.color }}>{reportData.maturity.name}</p>
               </div>
             </div>
           </div>
 
-          <div className="bg-white p-6 rounded-lg shadow-sm">
-            <h3 className="text-2xl font-bold mb-6 text-gray-900">Assessment Visualization</h3>
+          <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-100">
+            <h3 className="text-2xl font-bold mb-6 text-gray-900 tracking-tight">Assessment Visualization</h3>
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-              <div className="bg-gray-50 p-6 rounded-lg">
+              <div className="bg-gray-50 p-6 rounded-lg border border-gray-100">
                 <h4 className="text-lg font-semibold mb-4 text-gray-800">Maturity Radar Chart</h4>
                 <div className="h-80"><Radar data={getRadarData(reportData.scores)} options={radarOptions} /></div>
               </div>
-              <div className="bg-gray-50 p-6 rounded-lg">
+              <div className="bg-gray-50 p-6 rounded-lg border border-gray-100">
                 <h4 className="text-lg font-semibold mb-4 text-gray-800">Category Scores</h4>
                 <div className="h-80"><Bar data={getBarData(reportData.scores)} options={barOptions} /></div>
               </div>
             </div>
           </div>
 
-          <div className="bg-white p-6 rounded-lg shadow-sm">
-            <h3 className="text-xl font-semibold mb-4 text-gray-900">Detailed Category Analysis</h3>
+          <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-100">
+            <h3 className="text-xl font-semibold mb-6 text-gray-900 tracking-tight">Detailed Category Analysis</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {reportData.scores.categories.map(cat => {
                 const level = Math.max(0, Math.min(4, Math.round(cat.score) - 1));
                 const maturityInfo = MATURITY_LEVELS[level];
                 return (
-                  <div key={cat.id} className="p-4 border rounded-lg bg-gray-50">
+                  <div key={cat.id} className="p-5 border border-gray-200 rounded-lg bg-gray-50">
                     <h4 className="font-semibold text-gray-800">{cat.title}</h4>
-                    <div className="mt-2">
-                      <div className="flex justify-between items-center mb-1">
-                        <span className="text-sm text-gray-600">{cat.total ? `Points: ${cat.total} | ` : ''}Score</span>
-                        <span className="font-bold" style={{ color: maturityInfo.color }}>{cat.score.toFixed(1)}</span>
+                    <div className="mt-3">
+                      <div className="flex justify-between items-center mb-2">
+                        <span className="text-sm text-gray-600">{cat.total ? `Points: ${cat.total} | ` : ''}Avg:</span>
+                        <span className="font-bold text-lg" style={{ color: maturityInfo.color }}>{cat.score.toFixed(1)}/5.0</span>
                       </div>
-                      <div className="w-full bg-gray-200 rounded-full h-2">
-                        <div className="h-2 rounded-full transition-all" style={{ width: `${(cat.score / 5) * 100}%`, backgroundColor: maturityInfo.color }}></div>
+                      <div className="w-full bg-gray-200 rounded-full h-2.5">
+                        <div className="h-2.5 rounded-full transition-all" style={{ width: `${(cat.score / 5) * 100}%`, backgroundColor: maturityInfo.color }}></div>
                       </div>
-                      <div className="text-xs text-gray-500 mt-1">{maturityInfo.name}</div>
+                      <div className="text-xs text-gray-500 mt-2 uppercase tracking-wider font-semibold">{maturityInfo.name}</div>
                     </div>
                   </div>
                 );
@@ -962,7 +1039,7 @@ export default function EraneosAIMaturityScan() {
             </div>
           </div>
 
-          <div className="flex gap-4 justify-center bg-white p-6 rounded-lg shadow-sm">
+          <div className="flex gap-4 justify-center bg-white p-6 rounded-lg shadow-sm border border-gray-100">
             <button 
               onClick={() => {
                 const csvContent = generateCSVContent(reportData);
@@ -972,56 +1049,57 @@ export default function EraneosAIMaturityScan() {
                 a.download = `eraneos-report-${reportData.metadata.organisation || 'anonymous'}-${reportData.metadata.date}.csv`;
                 a.click(); URL.revokeObjectURL(url);
               }}
-              className="px-6 py-3 rounded-lg border hover:bg-gray-50 font-medium"
+              className="px-8 py-4 rounded-full border border-gray-300 hover:bg-gray-50 transition-colors font-medium"
             >
               📊 Download CSV
             </button>
             <button 
-              onClick={() => { window.history.replaceState({}, '', window.location.pathname); setView('form'); setReportData(null); }}
-              className="px-6 py-3 rounded-lg text-white font-medium bg-[#0b6b9a] hover:opacity-90"
+              onClick={() => { window.history.replaceState({}, '', window.location.pathname); setView('landing'); setReportData(null); }}
+              className="px-8 py-4 rounded-full text-white font-medium bg-gray-900 hover:bg-gray-800 transition-colors shadow-md"
             >
-              🔄 Take New Assessment
+              ← Back to Start
             </button>
           </div>
         </div>
       )}
 
+      {/* Admin View */}
       {view === 'admin' && (
         <div className="space-y-6">
-          <div className="bg-white p-6 rounded-lg shadow-sm">
+          <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-100">
             <div className="flex justify-between items-center mb-6">
-              <h2 className="text-2xl font-bold text-gray-900">Assessment Analytics Dashboard</h2>
-              <div className="flex gap-2">
-                <button onClick={loadAllAssessments} disabled={loading} className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50">
+              <h2 className="text-2xl font-bold text-gray-900 tracking-tight">Assessment Analytics Dashboard</h2>
+              <div className="flex gap-3">
+                <button onClick={loadAllAssessments} disabled={loading} className="px-5 py-2.5 bg-gray-900 text-white rounded-full hover:bg-gray-800 transition-colors disabled:opacity-50 text-sm font-medium">
                   {loading ? '🔄 Loading...' : '🔄 Refresh Data'}
                 </button>
-                <button onClick={() => setView('form')} className="px-4 py-2 border rounded hover:bg-gray-50">← Back</button>
+                <button onClick={() => setView('landing')} className="px-5 py-2.5 border border-gray-300 rounded-full hover:bg-gray-50 transition-colors text-sm font-medium">← Back</button>
               </div>
             </div>
 
             {analytics && (
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-                <div className="p-4 bg-blue-50 rounded-lg">
-                  <h3 className="font-semibold text-blue-800">Total Assessments</h3>
-                  <p className="text-2xl font-bold text-blue-900">{analytics.totalAssessments}</p>
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+                <div className="p-5 bg-gray-50 rounded-lg border border-gray-200">
+                  <h3 className="font-semibold text-gray-500 uppercase tracking-wider text-xs mb-1">Total Assessments</h3>
+                  <p className="text-3xl font-extrabold text-gray-900">{analytics.totalAssessments}</p>
                 </div>
-                <div className="p-4 bg-green-50 rounded-lg">
-                  <h3 className="font-semibold text-green-800">Average Score</h3>
-                  <p className="text-2xl font-bold text-green-900">{analytics.averageScore}/5.0</p>
+                <div className="p-5 bg-gray-50 rounded-lg border border-gray-200">
+                  <h3 className="font-semibold text-gray-500 uppercase tracking-wider text-xs mb-1">Average Score</h3>
+                  <p className="text-3xl font-extrabold text-gray-900">{analytics.averageScore}<span className="text-lg text-gray-400 font-medium">/5.0</span></p>
                 </div>
-                <div className="p-4 bg-orange-50 rounded-lg">
-                  <h3 className="font-semibold text-orange-800">Recent (30 days)</h3>
-                  <p className="text-2xl font-bold text-orange-900">{analytics.recentAssessments}</p>
+                <div className="p-5 bg-gray-50 rounded-lg border border-gray-200">
+                  <h3 className="font-semibold text-gray-500 uppercase tracking-wider text-xs mb-1">Recent (30 days)</h3>
+                  <p className="text-3xl font-extrabold text-gray-900">{analytics.recentAssessments}</p>
                 </div>
-                <div className="p-4 bg-purple-50 rounded-lg">
-                  <h3 className="font-semibold text-purple-800">GitHub Integration</h3>
-                  <p className="text-sm font-bold text-purple-900">{githubService.isAvailable() ? '✅ Active' : '❌ Not Configured'}</p>
+                <div className="p-5 bg-gray-50 rounded-lg border border-gray-200">
+                  <h3 className="font-semibold text-gray-500 uppercase tracking-wider text-xs mb-1">GitHub Integration</h3>
+                  <p className="text-lg font-bold text-gray-900 mt-2">{githubService.isAvailable() ? '✅ Active' : '❌ Not Configured'}</p>
                 </div>
               </div>
             )}
 
             {analytics && (
-              <div className="bg-gray-50 p-6 rounded-lg">
+              <div className="bg-gray-50 p-6 rounded-lg border border-gray-100">
                 <h3 className="text-lg font-semibold mb-4 text-gray-800">Maturity Level Distribution</h3>
                 <div className="h-64">
                   <Bar 
@@ -1042,84 +1120,84 @@ export default function EraneosAIMaturityScan() {
             )}
           </div>
 
-          <div className="bg-white p-6 rounded-lg shadow-sm">
+          <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-100">
             <h3 className="text-lg font-semibold mb-4 text-gray-800">Filter & Export</h3>
             
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
-              <input type="text" placeholder="Organisation" value={filters.organisation} onChange={e => setFilters(p => ({ ...p, organisation: e.target.value }))} className="p-2 border rounded" />
-              <input type="text" placeholder="Contact Name" value={filters.contactName} onChange={e => setFilters(p => ({ ...p, contactName: e.target.value }))} className="p-2 border rounded" />
-              <select value={filters.industry} onChange={e => setFilters(p => ({ ...p, industry: e.target.value }))} className="p-2 border rounded bg-white">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+              <input type="text" placeholder="Organisation" value={filters.organisation} onChange={e => setFilters(p => ({ ...p, organisation: e.target.value }))} className="p-3 border border-gray-200 rounded-lg outline-none focus:border-gray-400" />
+              <input type="text" placeholder="Contact Name" value={filters.contactName} onChange={e => setFilters(p => ({ ...p, contactName: e.target.value }))} className="p-3 border border-gray-200 rounded-lg outline-none focus:border-gray-400" />
+              <select value={filters.industry} onChange={e => setFilters(p => ({ ...p, industry: e.target.value }))} className="p-3 border border-gray-200 rounded-lg outline-none bg-white">
                 <option value="">All Industries</option>
                 {INDUSTRIES.map(ind => <option key={ind} value={ind}>{ind}</option>)}
               </select>
-              <select value={filters.companySize} onChange={e => setFilters(p => ({ ...p, companySize: e.target.value }))} className="p-2 border rounded bg-white">
+              <select value={filters.companySize} onChange={e => setFilters(p => ({ ...p, companySize: e.target.value }))} className="p-3 border border-gray-200 rounded-lg outline-none bg-white">
                 <option value="">All Company Sizes</option>
                 {COMPANY_SIZES.map(size => <option key={size} value={size}>{size}</option>)}
               </select>
-              <select value={filters.role} onChange={e => setFilters(p => ({ ...p, role: e.target.value }))} className="p-2 border rounded bg-white">
+              <select value={filters.role} onChange={e => setFilters(p => ({ ...p, role: e.target.value }))} className="p-3 border border-gray-200 rounded-lg outline-none bg-white">
                 <option value="">All Roles</option>
                 {ROLES.map(role => <option key={role} value={role}>{role}</option>)}
               </select>
-              <select value={filters.maturityLevel} onChange={e => setFilters(p => ({ ...p, maturityLevel: e.target.value }))} className="p-2 border rounded bg-white">
+              <select value={filters.maturityLevel} onChange={e => setFilters(p => ({ ...p, maturityLevel: e.target.value }))} className="p-3 border border-gray-200 rounded-lg outline-none bg-white">
                 <option value="">All Levels</option>
                 {MATURITY_LEVELS.map(l => <option key={l.name} value={l.name}>{l.name}</option>)}
               </select>
-              <input type="date" placeholder="From Date" value={filters.dateFrom} onChange={e => setFilters(p => ({ ...p, dateFrom: e.target.value }))} className="p-2 border rounded" />
-              <input type="date" placeholder="To Date" value={filters.dateTo} onChange={e => setFilters(p => ({ ...p, dateTo: e.target.value }))} className="p-2 border rounded" />
+              <input type="date" placeholder="From Date" value={filters.dateFrom} onChange={e => setFilters(p => ({ ...p, dateFrom: e.target.value }))} className="p-3 border border-gray-200 rounded-lg outline-none text-gray-600" />
+              <input type="date" placeholder="To Date" value={filters.dateTo} onChange={e => setFilters(p => ({ ...p, dateTo: e.target.value }))} className="p-3 border border-gray-200 rounded-lg outline-none text-gray-600" />
             </div>
             
-            <div className="flex justify-between items-center bg-gray-50 p-4 rounded-lg mt-4">
-              <div className="flex gap-2">
-                <button onClick={() => setSelectedAssessments(selectedAssessments.length === filteredAssessments.length ?[] : filteredAssessments.map(a => a.id))} className="px-4 py-2 border rounded hover:bg-gray-100 text-sm bg-white">
+            <div className="flex justify-between items-center bg-gray-50 p-5 rounded-lg border border-gray-200">
+              <div className="flex gap-3">
+                <button onClick={() => setSelectedAssessments(selectedAssessments.length === filteredAssessments.length ?[] : filteredAssessments.map(a => a.id))} className="px-5 py-2 border border-gray-300 rounded-lg hover:bg-white text-sm font-medium transition-colors">
                   {selectedAssessments.length === filteredAssessments.length ? 'Deselect All' : 'Select All'}
                 </button>
-                <button onClick={() => handleBulkExport('csv')} disabled={selectedAssessments.length === 0 || loading} className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 disabled:opacity-50 text-sm">
+                <button onClick={() => handleBulkExport('csv')} disabled={selectedAssessments.length === 0 || loading} className="px-5 py-2 bg-gray-900 text-white rounded-lg hover:bg-gray-800 disabled:opacity-50 text-sm font-medium transition-colors shadow-sm">
                   📊 Export CSV ({selectedAssessments.length})
                 </button>
-                <button onClick={() => handleBulkExport('json')} disabled={selectedAssessments.length === 0 || loading} className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50 text-sm">
+                <button onClick={() => handleBulkExport('json')} disabled={selectedAssessments.length === 0 || loading} className="px-5 py-2 border border-gray-300 bg-white text-gray-800 rounded-lg hover:bg-gray-50 disabled:opacity-50 text-sm font-medium transition-colors">
                   📄 Export JSON ({selectedAssessments.length})
                 </button>
-                <button onClick={() => setFilters({ dateFrom: '', dateTo: '', organisation: '', contactName: '', industry: '', companySize: '', role: '', maturityLevel: '', scoreMin: '', scoreMax: '' })} className="px-4 py-2 text-gray-500 hover:text-gray-800 text-sm ml-4">
+                <button onClick={() => setFilters({ dateFrom: '', dateTo: '', organisation: '', contactName: '', industry: '', companySize: '', role: '', maturityLevel: '', scoreMin: '', scoreMax: '' })} className="px-5 py-2 text-gray-500 hover:text-gray-800 text-sm ml-2 font-medium transition-colors">
                   Clear Filters
                 </button>
               </div>
-              <span className="text-sm text-gray-600 font-medium">Showing {filteredAssessments.length} of {allAssessments.length}</span>
+              <span className="text-sm text-gray-600 font-bold bg-white px-3 py-1.5 rounded-md border border-gray-200">Showing {filteredAssessments.length} of {allAssessments.length}</span>
             </div>
           </div>
 
-          <div className="bg-white rounded-lg shadow-sm overflow-hidden">
+          <div className="bg-white rounded-lg shadow-sm border border-gray-100 overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
-                <thead className="bg-gray-50 border-b">
+                <thead className="bg-gray-50 border-b border-gray-200">
                   <tr>
                     <th className="p-4 text-left w-12"><input type="checkbox" checked={selectedAssessments.length === filteredAssessments.length && filteredAssessments.length > 0} onChange={() => setSelectedAssessments(selectedAssessments.length === filteredAssessments.length ?[] : filteredAssessments.map(a => a.id))} /></th>
-                    <th className="p-4 text-left font-semibold text-gray-800">Organisation</th>
-                    <th className="p-4 text-left font-semibold text-gray-800">Contact</th>
-                    <th className="p-4 text-left font-semibold text-gray-800">Industry</th>
-                    <th className="p-4 text-left font-semibold text-gray-800">Date</th>
-                    <th className="p-4 text-left font-semibold text-gray-800">Pct.</th>
-                    <th className="p-4 text-left font-semibold text-gray-800">Maturity</th>
-                    <th className="p-4 text-left font-semibold text-gray-800 text-right">Actions</th>
+                    <th className="p-4 text-left font-bold text-gray-700 uppercase tracking-wider text-xs">Organisation</th>
+                    <th className="p-4 text-left font-bold text-gray-700 uppercase tracking-wider text-xs">Contact</th>
+                    <th className="p-4 text-left font-bold text-gray-700 uppercase tracking-wider text-xs">Industry</th>
+                    <th className="p-4 text-left font-bold text-gray-700 uppercase tracking-wider text-xs">Date</th>
+                    <th className="p-4 text-left font-bold text-gray-700 uppercase tracking-wider text-xs">Pct.</th>
+                    <th className="p-4 text-left font-bold text-gray-700 uppercase tracking-wider text-xs">Maturity</th>
+                    <th className="p-4 text-right font-bold text-gray-700 uppercase tracking-wider text-xs">Actions</th>
                   </tr>
                 </thead>
-                <tbody>
+                <tbody className="divide-y divide-gray-100">
                   {filteredAssessments.map((assessment, i) => {
                     const mColor = MATURITY_LEVELS.find(l => l.name === assessment.maturityLevel)?.color || '#6b7280';
                     const industryDisplay = assessment.industry === 'Other' ? `Other (${assessment.customIndustry})` : assessment.industry;
                     
                     return (
-                      <tr key={assessment.id} className={i % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
+                      <tr key={assessment.id} className="hover:bg-gray-50 transition-colors">
                         <td className="p-4"><input type="checkbox" checked={selectedAssessments.includes(assessment.id)} onChange={() => setSelectedAssessments(p => p.includes(assessment.id) ? p.filter(id => id !== assessment.id) :[...p, assessment.id])} /></td>
-                        <td className="p-4 font-medium text-gray-900">{assessment.organisation}</td>
+                        <td className="p-4 font-semibold text-gray-900">{assessment.organisation}</td>
                         <td className="p-4 text-gray-600">{assessment.contactName || assessment.contact || 'N/A'}</td>
                         <td className="p-4 text-gray-600">{industryDisplay || 'N/A'}</td>
-                        <td className="p-4 text-gray-600">{new Date(assessment.date).toLocaleDateString()}</td>
+                        <td className="p-4 text-gray-500">{new Date(assessment.date).toLocaleDateString()}</td>
                         <td className="p-4 font-bold" style={{ color: mColor }}>{assessment.percentageScore ? `${assessment.percentageScore}%` : `${assessment.overallScore.toFixed(1)}`}</td>
-                        <td className="p-4"><span className="px-2 py-1 rounded text-xs font-bold text-white shadow-sm" style={{ backgroundColor: mColor }}>{assessment.maturityLevel}</span></td>
+                        <td className="p-4"><span className="px-2.5 py-1 rounded-md text-xs font-bold text-white shadow-sm" style={{ backgroundColor: mColor }}>{assessment.maturityLevel}</span></td>
                         <td className="p-4 text-right">
                           <div className="flex gap-2 justify-end">
-                            <button onClick={async () => { const r = await githubService.getAssessment(assessment.filePath); if (r.success) { setReportData(r.data); setView('report'); } }} className="px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors">View</button>
-                            <button onClick={() => handleDeleteAssessment(assessment)} className="px-3 py-1 bg-red-600 text-white rounded hover:bg-red-700 transition-colors">Delete</button>
+                            <button onClick={async () => { const r = await githubService.getAssessment(assessment.filePath); if (r.success) { setReportData(r.data); setView('report'); } }} className="px-3 py-1.5 border border-gray-300 text-gray-700 rounded-md hover:bg-white text-xs font-medium transition-colors">View</button>
+                            <button onClick={() => handleDeleteAssessment(assessment)} className="px-3 py-1.5 bg-red-50 text-red-600 rounded-md hover:bg-red-100 text-xs font-medium transition-colors">Delete</button>
                           </div>
                         </td>
                       </tr>
@@ -1129,7 +1207,7 @@ export default function EraneosAIMaturityScan() {
               </table>
             </div>
             {filteredAssessments.length === 0 && !loading && (
-              <div className="p-8 text-center text-gray-500">{allAssessments.length === 0 ? 'No assessments found. Click "Refresh Data" to load from GitHub.' : 'No assessments match your current filter criteria.'}</div>
+              <div className="p-10 text-center text-gray-500 bg-gray-50">{allAssessments.length === 0 ? 'No assessments found. Click "Refresh Data" to load from GitHub.' : 'No assessments match your current filter criteria.'}</div>
             )}
           </div>
         </div>
