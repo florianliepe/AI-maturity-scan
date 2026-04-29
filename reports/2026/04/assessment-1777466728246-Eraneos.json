@@ -1,0 +1,84 @@
+{
+  "id": "1777466728246",
+  "metadata": {
+    "organisation": "Eraneos",
+    "contactName": "Florian Liepe",
+    "email": "florian.liepe@eraneos.com",
+    "industry": "Other",
+    "customIndustry": "Consulting",
+    "companySize": "1000-4999 (Enterprise)",
+    "role": "Other",
+    "date": "2026-04-29"
+  },
+  "answers": {
+    "s_vision": 4,
+    "s_operative": 4,
+    "s_kunden": 3,
+    "s_ressourcen": 2,
+    "s_nutzen": 2,
+    "k_offenheit": 4,
+    "k_akzeptanz": 5,
+    "k_fehler": 5,
+    "k_transformation": 5,
+    "k_leadership": 4,
+    "k_kommunikation": 4,
+    "p_transparenz": 3,
+    "p_optimierung": 4,
+    "p_design": 4,
+    "p_skalierbarkeit": 4,
+    "g_formell": 3,
+    "g_ethik": 2,
+    "g_risiko": 4,
+    "g_sicherheit": 5,
+    "t_kompetenz": 4,
+    "t_motivation": 4,
+    "t_leadership": 4,
+    "t_coaching": 3
+  },
+  "scores": {
+    "categories": [
+      {
+        "id": "strategie",
+        "title": "Strategie",
+        "score": 3,
+        "total": 15
+      },
+      {
+        "id": "kultur",
+        "title": "Kultur und Führung",
+        "score": 4.5,
+        "total": 27
+      },
+      {
+        "id": "prozesse",
+        "title": "Prozesse",
+        "score": 3.75,
+        "total": 15
+      },
+      {
+        "id": "governance",
+        "title": "Governance",
+        "score": 3.5,
+        "total": 14
+      },
+      {
+        "id": "talent",
+        "title": "Talent",
+        "score": 3.75,
+        "total": 15
+      }
+    ],
+    "overall": 3.74,
+    "total": 86,
+    "percentage": 75,
+    "max": 115
+  },
+  "maturity": {
+    "level": 4,
+    "name": "AI Embedded",
+    "color": "#22c55e",
+    "description": "KI ist in Kernprozesse integriert, aktiv gesteuert und skaliert."
+  },
+  "timestamp": "2026-04-29T12:45:28.246Z",
+  "version": "4.0"
+}
