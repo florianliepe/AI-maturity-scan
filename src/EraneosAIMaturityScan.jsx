@@ -293,7 +293,7 @@ export default function EraneosAIMaturityScan() {
   }, []);
 
   const [answers, setAnswers] = useState(initialAnswers);
-  const[metadata, setMetadata] = useState({ 
+  const [metadata, setMetadata] = useState({ 
     organisation: '', contactName: '', email: '', industry: '', customIndustry: '', companySize: '', role: '', date: new Date().toISOString().slice(0, 10) 
   });
   const [submitted, setSubmitted] = useState(null);
@@ -305,14 +305,14 @@ export default function EraneosAIMaturityScan() {
   const [submissionStatus, setSubmissionStatus] = useState({ github: false, email: false });
   
   const [allAssessments, setAllAssessments] = useState([]);
-  const[selectedAssessments, setSelectedAssessments] = useState([]);
+  const [selectedAssessments, setSelectedAssessments] = useState([]);
   const [filters, setFilters] = useState({
     dateFrom: '', dateTo: '', organisation: '', contactName: '', industry: '', companySize: '', role: '', maturityLevel: '', scoreMin: '', scoreMax: ''
   });
   const [loading, setLoading] = useState(false);
   
   const [isAdminAuthenticated, setIsAdminAuthenticated] = useState(false);
-  const[showAdminLogin, setShowAdminLogin] = useState(false);
+  const [showAdminLogin, setShowAdminLogin] = useState(false);
   const [adminPassword, setAdminPassword] = useState('');
   const [adminLoginError, setAdminLoginError] = useState('');
   
@@ -656,14 +656,11 @@ export default function EraneosAIMaturityScan() {
       <div className="min-h-screen bg-white font-sans flex flex-col selection:bg-orange-100 text-gray-900">
         {adminModal}
         
-        {/* Navigation Bar */}
         <nav className="w-full flex items-center justify-between py-6 px-8 max-w-7xl mx-auto">
-          {/* Logo Approximation */}
           <div className="text-4xl font-extrabold tracking-tighter cursor-pointer" onClick={() => setView('landing')}>
             eraneos
           </div>
           
-          {/* Nav Links / Admin */}
           <div className="flex items-center gap-8">
             <div className="hidden md:flex gap-6 text-sm font-semibold">
               <span className="cursor-pointer hover:text-[#ff7a00] transition-colors">Expertise</span>
@@ -684,7 +681,6 @@ export default function EraneosAIMaturityScan() {
           </div>
         </nav>
 
-        {/* Hero Section */}
         <main className="flex-grow flex flex-col items-start justify-center px-8 py-20 max-w-7xl mx-auto w-full">
           <div className="max-w-4xl">
             <h1 className="text-5xl md:text-7xl font-bold tracking-tight mb-8 leading-[1.1]">
@@ -705,7 +701,6 @@ export default function EraneosAIMaturityScan() {
           </div>
         </main>
         
-        {/* Footer Area */}
         <footer className="w-full border-t border-gray-100 py-8 px-8 text-sm text-gray-500 flex justify-between max-w-7xl mx-auto">
           <div>© {new Date().getFullYear()} Eraneos Group. All rights reserved.</div>
           <div>Transforming potential into performance.</div>
@@ -719,9 +714,10 @@ export default function EraneosAIMaturityScan() {
     <div className="p-4 md:p-6 max-w-7xl mx-auto bg-gray-50 min-h-screen font-sans">
       {adminModal}
 
-      {/* App Header */}
+      {/* Global Subpage Header */}
       <header className="flex flex-col md:flex-row items-start md:items-center justify-between mb-8 bg-white p-6 rounded-lg shadow-sm relative gap-4">
-        <div className="flex items-center gap-4 cursor-pointer" onClick={() => setView('landing')}>
+        
+        <div className="flex items-center gap-4 cursor-pointer hover:opacity-80 transition-opacity" onClick={() => setView('landing')} title="Return to Main Menu">
           <div className={`w-12 h-12 rounded-lg flex items-center justify-center text-white font-bold text-xl ${ERANEOS_COLORS.brand}`}>E</div>
           <div>
             <h1 className="text-2xl md:text-3xl font-bold text-gray-900 tracking-tight">Eraneos AI Readiness Scan</h1>
@@ -729,17 +725,28 @@ export default function EraneosAIMaturityScan() {
           </div>
         </div>
         
-        {!isAdminAuthenticated && (
-          <button onClick={handleAdminLogin} className="absolute top-4 right-4 text-xs text-gray-400 hover:text-gray-600">Admin</button>
-        )}
-        {isAdminAuthenticated && (
-          <div className="absolute top-4 right-4 flex items-center gap-2">
-            <span className="text-xs text-green-600 font-medium">● Admin</span>
-            <button onClick={handleAdminLogout} className="text-xs text-gray-400 hover:text-gray-600">Logout</button>
-          </div>
-        )}
+        {/* Universal Top-Right Navigation cluster */}
+        <div className="absolute top-4 right-4 flex items-center gap-4">
+          <button 
+            onClick={() => setView('landing')} 
+            className="text-xs font-bold text-gray-500 hover:text-[#ff7a00] uppercase tracking-wider transition-colors"
+          >
+            ← Main Menu
+          </button>
+          
+          <div className="h-4 w-px bg-gray-300"></div> {/* Vertical Divider */}
+          
+          {!isAdminAuthenticated ? (
+            <button onClick={handleAdminLogin} className="text-xs text-gray-400 hover:text-gray-900 uppercase tracking-wider transition-colors">Admin</button>
+          ) : (
+            <div className="flex items-center gap-3">
+              <span className="text-xs text-green-600 font-bold uppercase tracking-wider">● Admin</span>
+              <button onClick={handleAdminLogout} className="text-xs text-gray-400 hover:text-gray-900 uppercase tracking-wider transition-colors">Logout</button>
+            </div>
+          )}
+        </div>
         
-        <div className="text-right bg-gray-50 p-3 rounded-lg border border-gray-100 min-w-[200px]">
+        <div className="text-right bg-gray-50 p-3 rounded-lg border border-gray-100 min-w-[200px] mt-2 md:mt-0">
           <div className="text-sm text-gray-600 mb-1">Overall Assessment</div>
           <div className="flex items-center justify-between gap-4">
             <div className="font-bold text-2xl text-gray-800">{scores.total}<span className="text-sm text-gray-500 font-normal"> / {scores.max} pts</span></div>
@@ -844,6 +851,7 @@ export default function EraneosAIMaturityScan() {
           ))}
 
           <div className="flex flex-wrap gap-4 justify-center bg-white p-6 rounded-lg shadow-sm border border-gray-100">
+            <button onClick={() => setView('landing')} className="px-6 py-3 rounded-full border border-gray-300 text-gray-700 hover:bg-gray-50 transition-colors font-medium">← Back to Main</button>
             <button onClick={exportToCSV} className="px-6 py-3 rounded-full border border-gray-300 hover:bg-gray-50 transition-colors font-medium">📊 Export CSV</button>
             <button onClick={() => setView('dashboard')} className="px-6 py-3 rounded-full text-white font-medium hover:opacity-90 bg-gray-900 shadow-md">📈 View Dashboard</button>
             {isAdminAuthenticated && <button onClick={() => setView('admin')} className="px-6 py-3 rounded-full border border-purple-300 text-purple-700 hover:bg-purple-50 transition-colors font-medium">🔧 Admin Analytics</button>}
@@ -894,7 +902,8 @@ export default function EraneosAIMaturityScan() {
             </div>
           </div>
 
-          <div className="flex gap-4 justify-center bg-white p-6 rounded-lg shadow-sm border border-gray-100">
+          <div className="flex flex-wrap gap-4 justify-center bg-white p-6 rounded-lg shadow-sm border border-gray-100">
+            <button onClick={() => setView('landing')} className="px-6 py-3 rounded-full border border-gray-300 text-gray-700 hover:bg-gray-50 transition-colors font-medium">← Back to Main</button>
             <button onClick={() => setView('form')} className="px-6 py-3 rounded-full border border-gray-300 hover:bg-gray-50 transition-colors font-medium">← Back to Assessment</button>
             <button onClick={exportToCSV} className="px-6 py-3 rounded-full bg-gray-900 text-white hover:bg-gray-800 transition-colors font-medium">📊 Export Data</button>
           </div>
@@ -962,6 +971,7 @@ export default function EraneosAIMaturityScan() {
           </div>
           
           <div className="flex flex-wrap gap-4 justify-center">
+            <button onClick={() => setView('landing')} className="px-8 py-4 rounded-full border border-gray-300 text-gray-700 hover:bg-gray-50 transition-colors font-medium">← Back to Main</button>
             <button onClick={exportToCSV} className="px-8 py-4 rounded-full border border-gray-300 hover:bg-gray-50 transition-colors font-medium">📊 Download CSV</button>
             <button onClick={() => setView('dashboard')} className="px-8 py-4 rounded-full text-white font-medium bg-[#ff7a00] hover:bg-[#e66e00] shadow-md transition-colors">📈 View Dashboard</button>
             <button onClick={() => { setAnswers(initialAnswers); setView('form'); }} className="px-8 py-4 rounded-full text-white font-medium bg-gray-900 hover:bg-gray-800 shadow-md transition-colors">🔄 New Assessment</button>
@@ -1039,7 +1049,13 @@ export default function EraneosAIMaturityScan() {
             </div>
           </div>
 
-          <div className="flex gap-4 justify-center bg-white p-6 rounded-lg shadow-sm border border-gray-100">
+          <div className="flex flex-wrap gap-4 justify-center bg-white p-6 rounded-lg shadow-sm border border-gray-100">
+            <button 
+              onClick={() => { window.history.replaceState({}, '', window.location.pathname); setView('landing'); setReportData(null); }}
+              className="px-8 py-4 rounded-full border border-gray-300 text-gray-700 hover:bg-gray-50 transition-colors font-medium"
+            >
+              ← Back to Main
+            </button>
             <button 
               onClick={() => {
                 const csvContent = generateCSVContent(reportData);
@@ -1054,10 +1070,10 @@ export default function EraneosAIMaturityScan() {
               📊 Download CSV
             </button>
             <button 
-              onClick={() => { window.history.replaceState({}, '', window.location.pathname); setView('landing'); setReportData(null); }}
-              className="px-8 py-4 rounded-full text-white font-medium bg-gray-900 hover:bg-gray-800 transition-colors shadow-md"
+              onClick={() => { window.history.replaceState({}, '', window.location.pathname); setView('form'); setReportData(null); }}
+              className="px-8 py-4 rounded-full text-white font-medium bg-[#0b6b9a] hover:opacity-90 shadow-md transition-colors"
             >
-              ← Back to Start
+              🔄 Take New Assessment
             </button>
           </div>
         </div>
@@ -1073,7 +1089,7 @@ export default function EraneosAIMaturityScan() {
                 <button onClick={loadAllAssessments} disabled={loading} className="px-5 py-2.5 bg-gray-900 text-white rounded-full hover:bg-gray-800 transition-colors disabled:opacity-50 text-sm font-medium">
                   {loading ? '🔄 Loading...' : '🔄 Refresh Data'}
                 </button>
-                <button onClick={() => setView('landing')} className="px-5 py-2.5 border border-gray-300 rounded-full hover:bg-gray-50 transition-colors text-sm font-medium">← Back</button>
+                <button onClick={() => setView('landing')} className="px-5 py-2.5 border border-gray-300 text-gray-700 rounded-full hover:bg-gray-50 transition-colors text-sm font-medium">← Back to Main</button>
               </div>
             </div>
 
