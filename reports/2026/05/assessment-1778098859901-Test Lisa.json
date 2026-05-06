@@ -1,0 +1,84 @@
+{
+  "id": "1778098859901",
+  "metadata": {
+    "organisation": "Test Lisa",
+    "contactName": "Lisa Simon",
+    "email": "lisa.simon@eraneos.com",
+    "industry": "Public Sector",
+    "customIndustry": "",
+    "companySize": "1000-4999 (Enterprise)",
+    "role": "IT / Data",
+    "date": "2026-05-06"
+  },
+  "answers": {
+    "s_vision": 4,
+    "s_operative": 3,
+    "s_kunden": 3,
+    "s_ressourcen": 3,
+    "s_nutzen": 3,
+    "k_offenheit": 4,
+    "k_akzeptanz": 4,
+    "k_fehler": 3,
+    "k_transformation": 3,
+    "k_leadership": 4,
+    "k_kommunikation": 3,
+    "p_transparenz": 1,
+    "p_optimierung": 2,
+    "p_design": 2,
+    "p_skalierbarkeit": 1,
+    "g_formell": 3,
+    "g_ethik": 2,
+    "g_risiko": 1,
+    "g_sicherheit": 3,
+    "t_kompetenz": 3,
+    "t_motivation": 4,
+    "t_leadership": 2,
+    "t_coaching": 3
+  },
+  "scores": {
+    "categories": [
+      {
+        "id": "strategie",
+        "title": "Strategie",
+        "score": 3.2,
+        "total": 16
+      },
+      {
+        "id": "kultur",
+        "title": "Kultur und Führung",
+        "score": 3.5,
+        "total": 21
+      },
+      {
+        "id": "prozesse",
+        "title": "Prozesse",
+        "score": 1.5,
+        "total": 6
+      },
+      {
+        "id": "governance",
+        "title": "Governance",
+        "score": 2.25,
+        "total": 9
+      },
+      {
+        "id": "talent",
+        "title": "Talent",
+        "score": 3,
+        "total": 12
+      }
+    ],
+    "overall": 2.78,
+    "total": 64,
+    "percentage": 56,
+    "max": 115
+  },
+  "maturity": {
+    "level": 3,
+    "name": "AI Empowered",
+    "color": "#eab308",
+    "description": "Punktuelle Nutzung, grundlegende Befähigung und erste Frameworks etabliert."
+  },
+  "timestamp": "2026-05-06T20:20:59.901Z",
+  "version": "4.0"
+}
