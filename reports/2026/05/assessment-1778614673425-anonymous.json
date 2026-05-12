@@ -1,0 +1,84 @@
+{
+  "id": "1778614673425",
+  "metadata": {
+    "organisation": "",
+    "contactName": "",
+    "email": "",
+    "industry": "",
+    "customIndustry": "",
+    "companySize": "",
+    "role": "",
+    "date": "2026-05-12"
+  },
+  "answers": {
+    "s_vision": 5,
+    "s_operative": 3,
+    "s_kunden": 3,
+    "s_ressourcen": 5,
+    "s_nutzen": 1,
+    "k_offenheit": 3,
+    "k_akzeptanz": 3,
+    "k_fehler": 3,
+    "k_transformation": 3,
+    "k_leadership": 3,
+    "k_kommunikation": 3,
+    "p_transparenz": 3,
+    "p_optimierung": 3,
+    "p_design": 3,
+    "p_skalierbarkeit": 3,
+    "g_formell": 3,
+    "g_ethik": 3,
+    "g_risiko": 3,
+    "g_sicherheit": 3,
+    "t_kompetenz": 3,
+    "t_motivation": 3,
+    "t_leadership": 3,
+    "t_coaching": 3
+  },
+  "scores": {
+    "categories": [
+      {
+        "id": "strategie",
+        "title": "Strategie",
+        "score": 3.4,
+        "total": 17
+      },
+      {
+        "id": "kultur",
+        "title": "Kultur und Führung",
+        "score": 3,
+        "total": 18
+      },
+      {
+        "id": "prozesse",
+        "title": "Prozesse",
+        "score": 3,
+        "total": 12
+      },
+      {
+        "id": "governance",
+        "title": "Governance",
+        "score": 3,
+        "total": 12
+      },
+      {
+        "id": "talent",
+        "title": "Talent",
+        "score": 3,
+        "total": 12
+      }
+    ],
+    "overall": 3.09,
+    "total": 71,
+    "percentage": 62,
+    "max": 115
+  },
+  "maturity": {
+    "level": 4,
+    "name": "AI Embedded",
+    "color": "#22c55e",
+    "description": "KI ist in Kernprozesse integriert, aktiv gesteuert und skaliert."
+  },
+  "timestamp": "2026-05-12T19:37:53.425Z",
+  "version": "4.0"
+}
